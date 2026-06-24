@@ -13295,7 +13295,7 @@ function vehicle_distance_odometer_data($startTime, $endTime, $vehicleAssign)
 
         foreach ($vehicleAssign as $data) {
 
-            $serialNumber = $data->device->serial_number;
+            $serialNumber = $data->device->serial_number ?? null;
 
             // Retrieve logs within the time range
             $vehicleLogs = VehicleLogHistory::where("identifier", $serialNumber)
