@@ -1,0 +1,6 @@
+<?php
+echo json_encode([
+    'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'],
+    'HTTP_ORIGIN' => $_SERVER['HTTP_ORIGIN'] ?? null,
+    'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] ?? null,
+]);

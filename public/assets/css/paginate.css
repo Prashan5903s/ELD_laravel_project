@@ -1,0 +1,48 @@
+/* Pagination Container */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Pagination Links */
+.pagination .page-link {
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    margin: 0 5px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: #f0f0f0;
+}
+
+/* Active Page Link */
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+/* Disabled Links */
+.pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+}
+
+/* Previous and Next Buttons */
+.pagination .page-item.prev, .pagination .page-item.next {
+    display: flex;
+    align-items: center;
+}
+
+.pagination .page-item.prev .page-link::before, 
+.pagination .page-item.next .page-link::after {
+    content: "\\2039"; /* Previous arrow */
+    font-size: 1.2rem;
+}
+
+.pagination .page-item.next .page-link::after {
+    content: "\\203A"; /* Next arrow */
+}
