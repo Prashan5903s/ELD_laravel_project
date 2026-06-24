@@ -2834,13 +2834,13 @@ function driver_log_time($id, $time)
     if ($latestLog) {
 
         $currentShiftStatus = $latestLog->current_shift_status;
-        
+
         $latestEndLogTime = $latestLog->end_log_time;
-        
+
         if (!is_null($latestEndLogTime)) {
-           if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
-              $currentShiftStatus = 1;
-           }
+            if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
+                $currentShiftStatus = 1;
+            }
         }
 
         if (in_array($currentShiftStatus, [1, 2, 5])) {
@@ -3135,16 +3135,16 @@ function driver_log_time($id, $time)
                 "status"
             )
             ->first();
-            
+
         $currentShiftStatus = $latestLog->current_shift_status;
-        
+
         // if (!is_null($latestEndLogTime)) {
         //   if (Carbon::parse($endTime)->ne($currentTime)) {
-               
+
         //       $startTime = $endTime;
-               
+
         //       $endTime = $currentTime;
-               
+
         //       $currentShiftStatus = 1;
         //   }
         // }
@@ -13371,7 +13371,7 @@ function malfunction_vehicle_check_data($vid, $date)
 
     foreach ($vehicle as $val) {
 
-        $serialNumber = $val["devices"][0]["serial_number"];
+        $serialNumber = $val['devices'][0]['serial_number'] ?? null;
 
         $malFunExist = VehicleLogHistory::where("identifier", $serialNumber)
             ->whereBetween("event_date_time", [$startDay, $endDay])
