@@ -9,6 +9,7 @@ class HandlePreflight
 {
     public function handle(Request $request, Closure $next)
     {
+        
         // if ($request->getMethod() === 'OPTIONS') {
         //     return response('', 200)
         //         ->header('Access-Control-Allow-Origin', 'https://uat-eld.vercel.app')

@@ -419,7 +419,7 @@ class AlertCommand extends Command
 
                                 $logLocation = $log->location;
 
-                                $locationName = "";
+                                $locationName = "N/A";
 
                                 if (
 
