@@ -57,15 +57,15 @@ return [
     'url' => env('APP_URL', 'https://eld.apnatelelink.us/uat'),
 
     'asset_url' => env('ASSET_URL'),
-    
+
     'Map_key' => 'AIzaSyBB7W_XXb6ez5hA1jpwYUr4zWS8JF_fJ7A',
-    
+
     'weight_hos_violation' => 10,
 
     'weight_speeding' => 5,
 
     'weight_harsh_driving' => 3,
-    
+
     'weight_hard_braking' => 10,
 
     'weight_hard_accel' => 5,
@@ -73,7 +73,7 @@ return [
     'weight_hard_stop' => 10,
 
     'weight_hard_turn' => 5,
-    
+
     'ELD_OUTPUT_FILE_TOKEN' => "dK7wLz19qXePvM3rTYc8JFAbnQ4GHvUBzELkSoIaRtmx2pD5yN",
 
     /*
@@ -249,7 +249,7 @@ return [
         '9' => '9 Months',
         '12' => '1 Year',
     ],
-    
+
     'eld_web' => 'https://uat-eld.vercel.app/',
 
     'eld_mail' => 'support@uateld.com',
