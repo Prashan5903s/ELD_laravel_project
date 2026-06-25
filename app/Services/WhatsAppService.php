@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Twilio\Rest\Client;
+use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
@@ -21,6 +22,13 @@ class WhatsAppService
         string $contentSid,
         array $variables = []
     ) {
+
+        Log::info([
+            'from' => env('TWILIO_WHATSAPP_FROM'),
+            'to' => $to,
+            'contentSid' => $contentSid,
+        ]);
+
         return $this->client->messages->create(
             "whatsapp:$to",
             [
