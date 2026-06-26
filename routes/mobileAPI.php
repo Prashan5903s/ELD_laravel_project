@@ -20,6 +20,7 @@ use App\Http\Controllers\Mobile\API\NotificationMobileAPIController;
 use App\Http\Controllers\Mobile\API\DOTInspectionMobileAPIController;
 use App\Http\Controllers\Mobile\API\HOSUnsignedLogMobileAPIController;
 use App\Http\Controllers\Mobile\API\InspectionReportMobileAPIController;
+use App\Http\Controllers\Mobile\API\UserDeviceAPIController;
 
 
 // Public routes
@@ -33,6 +34,8 @@ Route::post('reset/mobile/password/{email}', [UserMobileAPIController::class, 's
 Route::middleware(['APILogCheck', 'auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
 
     Route::get('config/data', [AppConfigAPIController::class, 'app_config_data']);
+
+    Route::post("/user/device/notify", [UserDeviceAPIController::class, "store"]);
 
     Route::get('change/mobile/duty/status/{id}/{lat}/{long}/{text}', [HOSMobileAPIController::class, 'change_mobile_duty_status']);
 
@@ -73,7 +76,7 @@ Route::middleware(['APILogCheck', 'auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'
     Route::get('approval/mobile/request', [ApprovalMobileAPIController::class, 'index']);
 
     Route::post('approval/mobile/request/{type}/{accept}', [ApprovalMobileAPIController::class, 'approval_func']);
-    
+
     Route::post('insert/bluetooth-data', [BluetoothAPIController::class, "create"]);
 
     Route::post('setting/mobile/change/password', [SettingMobileAPIController::class, 'setting_change_password']);
