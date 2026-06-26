@@ -39,9 +39,9 @@ class LoginMobileApiController extends Controller
             }
 
             $user = Auth::user();
-            
+
             $users = User::select('first_name', 'last_name', 'email', 'country_code', 'mobile_no', 'pin_code', 'address', 'timezone', 'avatar_image')->find(Auth::user()->id);
-            
+
             $userInfo = UserInfo::where('user_id', $user->id)->first();
             $master = $user->master_id ? User::find($user->master_id) : null;
 
@@ -130,7 +130,8 @@ class LoginMobileApiController extends Controller
                     'token' => $tokenString,
                     'user_type' => $userType,
                     'user_info' => $users,
-                    "master_id"=> $master->id,
+                    "master_id" => $master->id,
+                    "master_company_id" => $user->master_company_id,
                     'master_user_type' => $master->user_type,
                     'log_session_id' => $logSession->id,
                 ], 200);
@@ -184,9 +185,9 @@ class LoginMobileApiController extends Controller
         $userType = $user->user_type;
 
         if ($userType == "TR") {
-            
+
             $timeZone = $user->timezone;
-            
+
         } else {
 
             $timeZone = $userInfo->home_terminal_timezone; // Fallback to UTC if null
