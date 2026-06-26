@@ -22,7 +22,6 @@ class UserDeviceAPIController extends Controller
             try {
 
                 $request->validate([
-                    'user_id' => 'required|integer|exists:users,id',
                     'device_id' => 'required|string|max:255',
                     'fcm_token' => 'required|string',
                     'platform' => 'required|in:android,ios',
