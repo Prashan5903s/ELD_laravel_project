@@ -11,7 +11,7 @@ class CorsMiddleware
     {
         if ($request->isMethod('OPTIONS')) {
             return response('', 200)
-                ->header('Access-Control-Allow-Origin', 'https://uat-eld.vercel.app/')
+                ->header('Access-Control-Allow-Origin', 'https://uat-eld.vercel.app')
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
                 ->header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Requested-With')
                 ->header('Access-Control-Allow-Credentials', 'true');
@@ -21,7 +21,7 @@ class CorsMiddleware
 
         $response->headers->set(
             'Access-Control-Allow-Origin',
-            'https://uat-eld.vercel.app/'
+            'https://uat-eld.vercel.app'
         );
 
         $response->headers->set(
