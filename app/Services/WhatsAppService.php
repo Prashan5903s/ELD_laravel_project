@@ -23,14 +23,6 @@ class WhatsAppService
         array $variables = []
     ) {
 
-        Log::info([
-            'from' => env('TWILIO_WHATSAPP_FROM'),
-            'to' => $to,
-            'contentSid' => $contentSid,
-            'accountSid' => env('TWILIO_ACCOUNT_SID'),
-            'authToken' => env('TWILIO_AUTH_TOKEN')
-        ]);
-
         return $this->client->messages->create(
             "whatsapp:$to",
             [
