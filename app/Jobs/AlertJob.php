@@ -157,6 +157,8 @@ class AlertJob implements ShouldQueue
                     case 4:
                         if ($recipientMobileNo && count($recipientMobileNo) > 0) {
 
+                            Log::info('Sending WhatsApp message', ['recipientMobileNo' => $recipientMobileNo, 'contentId' => $contentId, 'whatsAppVariable' => $whatsAppVariable]);
+
                             send_message_whatsApp($recipientMobileNo, $contentId, $whatsAppVariable);
                         }
 
