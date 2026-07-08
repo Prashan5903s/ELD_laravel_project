@@ -10827,7 +10827,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $endTimeFormatted = Carbon::parse($last)->format("H:i");
 
-            if ($startTimeFormatted != $endTimeFormatted) {
+            if ($create != $last) {
 
                 $datass[] = [
 
@@ -10882,8 +10882,6 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
             $arrayLogLength = count($datass);
 
             $lastLogData = $datass[$arrayLogLength - 1][4];
-
-            // return [$startTimeHI, $currentHI];
 
             if ($startTime == $currentTimeStart) {
 

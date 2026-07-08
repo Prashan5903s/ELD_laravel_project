@@ -2,6 +2,8 @@
 namespace App\Http\Controllers\Transport\Assets;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+
 use App\Models\Language;
 use App\Models\ListOption;
 use App\Models\State;
@@ -30,30 +32,6 @@ class VehiclesController extends Controller
 
     public function index(Request $request)
     {
-
-        // $sid   = env('TWILIO_ACCOUNT_SID');
-        // $token = env('TWILIO_AUTH_TOKEN');
-
-        // $client = new Client($sid, $token);
-
-        // $message = $client->messages->create(
-        //     'whatsapp:+919878784304', // customer number
-        //     [
-        //         'from'             => env('TWILIO_WHATSAPP_FROM'),
-
-        //         // Template content SID from Twilio
-        //         'contentSid'       => 'HX144bb9d6aa1a396ab1b4ccd885e1101e',
-
-        //         // Template variables
-        //         'contentVariables' => json_encode([
-        //             "1" => "Prashant",
-        //             "2" => "A02",
-        //             "3" => "2024-06-30",
-        //         ]),
-        //     ]
-        // );
-
-        // print_r($message->sid);
 
         // $user = Auth::user();
         $userIds = Auth::user()->master_id;
@@ -140,63 +118,63 @@ class VehiclesController extends Controller
 
         $request->validate([
 
-            'name'                => 'required',
+            'name' => 'required',
 
-            'vin'                 => 'required',
+            'vin' => 'required',
 
-            'make'                => 'required',
+            'make' => 'required',
 
-            'model'               => 'required',
+            'model' => 'required',
 
-            'year'                => 'required',
+            'year' => 'required',
 
-            'license_plate'       => 'required',
+            'license_plate' => 'required',
 
-            'fuel_type'           => 'required',
+            'fuel_type' => 'required',
 
-            'license_state'       => 'required',
+            'license_state' => 'required',
 
             'fuel_tank_secondary' => 'required',
 
-            'fuel_tank_primary'   => 'required',
+            'fuel_tank_primary' => 'required',
 
-            'throttle_wifi'       => 'required',
+            'throttle_wifi' => 'required',
 
         ]);
 
         Vehicle::create([
 
-            'name'                => $request->name,
+            'name' => $request->name,
 
-            'master_company_id'   => Session::get('master_company_id'), // Company id
+            'master_company_id' => Session::get('master_company_id'), // Company id
 
-            'master_id'           => Session::get('master_id'), // Group id
+            'master_id' => Session::get('master_id'), // Group id
 
-            'vin'                 => $request->vin,
+            'vin' => $request->vin,
 
-            'make'                => $request->make,
+            'make' => $request->make,
 
-            'model'               => $request->model,
+            'model' => $request->model,
 
-            'year'                => $request->year,
+            'year' => $request->year,
 
-            'fuel_type'           => $request->fuel_type,
+            'fuel_type' => $request->fuel_type,
 
-            'license_state'       => $request->license_state,
+            'license_state' => $request->license_state,
 
-            'throttle_wifi'       => $request->throttle_wifi,
+            'throttle_wifi' => $request->throttle_wifi,
 
-            'fuel_tank_primary'   => $request->fuel_tank_primary,
+            'fuel_tank_primary' => $request->fuel_tank_primary,
 
             'fuel_tank_secondary' => $request->fuel_tank_secondary,
 
-            'license_plate'       => $request->license_plate,
+            'license_plate' => $request->license_plate,
 
-            'notes'               => $request->notes,
+            'notes' => $request->notes,
 
-            'created_by'          => $request->user()->id,
+            'created_by' => $request->user()->id,
 
-            'updated_by'          => $request->user()->id,
+            'updated_by' => $request->user()->id,
 
         ]);
 
@@ -261,33 +239,33 @@ class VehiclesController extends Controller
 
         $request->validate([
 
-            'name'                => 'required',
+            'name' => 'required',
 
-            'vin'                 => 'required',
+            'vin' => 'required',
 
-            'make'                => 'required',
+            'make' => 'required',
 
-            'model'               => 'required',
+            'model' => 'required',
 
-            'year'                => 'required',
+            'year' => 'required',
 
-            'fuel_type'           => 'required',
+            'fuel_type' => 'required',
 
-            'license_plate'       => 'required',
+            'license_plate' => 'required',
 
-            'license_state'       => 'required',
+            'license_state' => 'required',
 
             'fuel_tank_secondary' => 'required',
 
-            'fuel_tank_primary'   => 'required',
+            'fuel_tank_primary' => 'required',
 
-            'throttle_wifi'       => 'required',
+            'throttle_wifi' => 'required',
 
         ]);
 
         $vehicle = Vehicle::find($id);
 
-        if (! isset($vehicle)) {
+        if (!isset($vehicle)) {
 
             return response()->json(['error', 'Vehicle not found.']);
 
@@ -295,31 +273,31 @@ class VehiclesController extends Controller
 
         $vehicle->update([
 
-            'name'                => $request->name,
+            'name' => $request->name,
 
-            'vin'                 => $request->vin,
+            'vin' => $request->vin,
 
-            'make'                => $request->make,
+            'make' => $request->make,
 
-            'model'               => $request->model,
+            'model' => $request->model,
 
-            'year'                => $request->year,
+            'year' => $request->year,
 
-            'fuel_type'           => $request->fuel_type,
+            'fuel_type' => $request->fuel_type,
 
-            'license_state'       => $request->license_state,
+            'license_state' => $request->license_state,
 
-            'throttle_wifi'       => $request->throttle_wifi,
+            'throttle_wifi' => $request->throttle_wifi,
 
-            'fuel_tank_primary'   => $request->fuel_tank_primary,
+            'fuel_tank_primary' => $request->fuel_tank_primary,
 
             'fuel_tank_secondary' => $request->fuel_tank_secondary,
 
-            'license_plate'       => $request->license_plate,
+            'license_plate' => $request->license_plate,
 
-            'notes'               => $request->notes,
+            'notes' => $request->notes,
 
-            'updated_by'          => $request->user()->id,
+            'updated_by' => $request->user()->id,
 
         ]);
 
@@ -344,7 +322,7 @@ class VehiclesController extends Controller
 
         $vehicle = Vehicle::find($id);
 
-        if (! isset($vehicle)) {
+        if (!isset($vehicle)) {
 
             return response()->json(['error' => 'Vehicle not found.']);
 
