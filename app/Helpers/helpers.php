@@ -10823,11 +10823,11 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                 ->first();
 
-            $startTimeFormatted = Carbon::parse($create)->format("H:i");
+            $startTimeFormatted = Carbon::parse($create)->format("H:i:s");
 
-            $endTimeFormatted = Carbon::parse($last)->format("H:i");
+            $endTimeFormatted = Carbon::parse($last)->format("H:i:s");
 
-            if ($create != $last) {
+            if ($startTimeFormatted != $endTimeFormatted) {
 
                 $datass[] = [
 
@@ -10857,11 +10857,11 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
 
-            $startTimeHI = Carbon::parse($startTime)->format("H:i");
+            $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
 
-            $currentHI = Carbon::parse($currentTime)->format("H:i");
+            $currentHI = Carbon::parse($currentTime)->format("H:i:s");
 
-            $endTimeHI = Carbon::parse($endTime)->format("H:i");
+            $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
             $startTimeLogData = $datass[0][3];
 
@@ -10930,11 +10930,11 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
 
-            $startTimeHI = Carbon::parse($startTime)->format("H:i");
+            $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
 
-            $currentHI = Carbon::parse($currentTime)->format("H:i");
+            $currentHI = Carbon::parse($currentTime)->format("H:i:s");
 
-            $endTimeHI = Carbon::parse($endTime)->format("H:i");
+            $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
             if ($startTime == $currentTimeStart) {
 
@@ -10955,9 +10955,9 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
         if ($startTime == $currentStartTime) {
 
-            $currentStartTime = Carbon::parse($currentTime)->format("H:i");
+            $currentStartTime = Carbon::parse($currentTime)->format("H:i:s");
 
-            $startTime = Carbon::parse($startTime)->format("H:i");
+            $startTime = Carbon::parse($startTime)->format("H:i:s");
 
             $datass[] = [
 
@@ -10976,9 +10976,9 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
             ];
         } else {
 
-            $startTime = Carbon::parse($startTime)->format("H:i");
+            $startTime = Carbon::parse($startTime)->format("H:i:s");
 
-            $endTime = Carbon::parse($endTime)->format("H:i");
+            $endTime = Carbon::parse($endTime)->format("H:i:s");
 
             $datass[] = [1, 1, "Off duty", $startTime, $endTime, "abc"];
         }
