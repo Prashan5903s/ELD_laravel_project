@@ -10917,7 +10917,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                         $datass[$arrayLen - 1][4],
 
-                        "23:59",
+                        "23:59:59",
 
                         $datass[$arrayLen - 1][5],
 

@@ -33,6 +33,26 @@ class VehiclesController extends Controller
     public function index(Request $request)
     {
 
+        $id = 98;
+
+        $date = "2026-07-07";
+
+        $startTime = Carbon::parse($date)->startOfDay();
+
+        $endTime = Carbon::parse($date)->endOfDay();
+
+        $userInfo = UserInfo::where('user_id', $id)->first();
+
+        $timezone = $userInfo->home_terminal_timezone;
+
+        $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
+
+        $currentTime = Carbon::parse($currentTime);
+
+        $data = graph_hos_chart($id, $startTime, $endTime, $currentTime);
+
+        return response()->json($data);
+
         // $user = Auth::user();
         $userIds = Auth::user()->master_id;
 

@@ -9,20 +9,22 @@ class CorsMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
+        $origin = $request->header('Origin');
+
+        $allowedOrigins = [
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+        ];
+
         if ($request->isMethod('OPTIONS')) {
-            return response('', 200)
-                ->header('Access-Control-Allow-Origin', 'https://uat-eld.vercel.app')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Requested-With')
-                ->header('Access-Control-Allow-Credentials', 'true');
+            $response = response('', 200);
+        } else {
+            $response = $next($request);
         }
 
-        $response = $next($request);
-
-        $response->headers->set(
-            'Access-Control-Allow-Origin',
-            'https://uat-eld.vercel.app'
-        );
+        if (in_array($origin, $allowedOrigins)) {
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+        }
 
         $response->headers->set(
             'Access-Control-Allow-Methods',
@@ -31,7 +33,7 @@ class CorsMiddleware
 
         $response->headers->set(
             'Access-Control-Allow-Headers',
-            'Authorization, Content-Type, X-Requested-With'
+            'Origin, Content-Type, Authorization, X-Requested-With, Accept'
         );
 
         $response->headers->set(
