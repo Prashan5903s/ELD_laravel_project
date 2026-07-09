@@ -10905,7 +10905,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
                 }
             } else {
 
-                if ($lastLogData != "23:59") {
+                if ($lastLogData != "23:59:59") {
 
                     $datass[] = [
 
