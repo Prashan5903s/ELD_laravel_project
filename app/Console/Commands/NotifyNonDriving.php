@@ -170,14 +170,26 @@ class NotifyNonDriving extends Command
                                         $user2->notify($notification2);
                                     }
 
+                                    $logEndTime = $driverLog->end_log_time;
+
+                                    // Close the current driving log if it's still open
+                                    if (is_null($logEndTime)) {
+                                        $logEndTime = $currentTime;
+
+                                        $driverLog->update([
+                                            'end_log_time' => $logEndTime,
+                                        ]);
+                                    }
+
+                                    // Create the new Off Duty log
                                     $newDriverLog = DriverShiftLog::create([
                                         'driver_id' => $id,
-                                        'start_log_time' => $driverLog->start_log_time,
+                                        'start_log_time' => $logEndTime,
                                         'end_log_time' => null,
-                                        "current_shift_status" => 1,
+                                        'current_shift_status' => 1,
                                         'vehicle_id' => $vehicleId,
                                         'system_entry' => 1,
-                                        "accepted" => 1,
+                                        'accepted' => 1,
                                         'is_add_approved' => 1,
                                         'is_edit_approved' => 1,
                                         'is_assign_approved' => 1,
