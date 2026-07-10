@@ -7,6 +7,8 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Device;
+use App\Models\BluetoothLogData;
+use App\Models\RuleAssign;
 use App\Models\UserInfo;
 use App\Models\DriverShiftLog;
 use App\Models\VehicleLogHistory;
@@ -36,18 +38,11 @@ class NotifyNonDriving extends Command
     public function handle()
     {
 
-        $transportUsers = User::where('user_type', 'TR')->get();
+        $transportIds = User::where('user_type', 'TR')->pluck('id');
 
-        // Initialize an empty collection to store drivers
-        $drivers = collect();
-
-        // Iterate through each transport user
-        foreach ($transportUsers as $transport) {
-            // Retrieve drivers for the current transport user
-            $driversForTransport = User::where('user_type', 'U')->where('master_id', $transport->id)->get();
-            // Merge the drivers into the main collection
-            $drivers = $drivers->merge($driversForTransport);
-        }
+        $drivers = User::where('user_type', 'U')
+            ->whereIn('master_id', $transportIds)
+            ->get();
 
         function conTimezone($timezone, $time)
         {
@@ -60,14 +55,23 @@ class NotifyNonDriving extends Command
         if ($drivers && count($drivers) > 0) {
 
             foreach ($drivers as $data) {
-
-                $odometerChange = 0;
+                $shiftStart = 0;
+                $cycleStart = 0;
+                $locationName = "";
 
                 $id = $data->id;
+
+                $rule_ids = RuleAssign::where('user_id', $id)
+                    ->pluck('rule_id');
+
 
                 $master = $data->master_id;
 
                 $userInfo = UserInfo::where('user_id', $id)->first();
+
+                if (!$userInfo || empty($userInfo->home_terminal_timezone)) {
+                    continue;
+                }
 
                 $timeZone = $userInfo->home_terminal_timezone;
 
@@ -81,9 +85,9 @@ class NotifyNonDriving extends Command
                 $endTime = Carbon::parse($currentTime)->endOfDay();
 
                 $driverLog = DriverShiftLog::where('driver_id', $id)
-                 ->where('is_add_approved', 1)
-                 ->latest('start_log_time')
-                 ->first();
+                    ->where('is_add_approved', 1)
+                    ->latest('start_log_time')
+                    ->first();
 
                 if ($driverLog) {
 
@@ -99,9 +103,17 @@ class NotifyNonDriving extends Command
 
                     $vehicle = Vehicle::find($vehicleId);
 
+                    if (!$vehicle) {
+                        continue;
+                    }
+
                     if ($currentStatus == 3 && $vehicleId) {
 
                         $device = Device::where('vehicle_id', $vehicleId)->first();
+
+                        if (!$device || empty($device->serial_number)) {
+                            continue;
+                        }
 
                         if ($device) {
 
@@ -111,53 +123,30 @@ class NotifyNonDriving extends Command
 
                                 $vehicleLog = VehicleLogHistory::where('identifier', $serialNumber)
                                     ->where('is_notify', 0)
-                                    ->where('speed', '<', 5)
+                                    ->where('speed', '>=', 5)
                                     ->whereBetween('event_date_time', [$create, $last])
                                     ->orderBy('event_date_time', 'asc')
                                     ->get();
 
-                                if ($vehicleLog && count($vehicleLog) > 0) {
+                                $bluetoothLog = BluetoothLogData::whereRaw(
+                                    "CAST(JSON_UNQUOTE(JSON_EXTRACT(log_data, '$.speed')) AS DECIMAL(10,2)) >= ?",
+                                    [5]
+                                )
+                                    ->whereRaw(
+                                        "JSON_UNQUOTE(JSON_EXTRACT(log_data, '$.vin')) = ?",
+                                        [$vehicle->vin]
+                                    )
+                                    ->whereRaw(
+                                        "JSON_UNQUOTE(JSON_EXTRACT(log_data, '$.start_log_time')) <= ?",
+                                        [$last]
+                                    )
+                                    ->whereRaw(
+                                        "JSON_UNQUOTE(JSON_EXTRACT(log_data, '$.end_log_time')) >= ?",
+                                        [$create]
+                                    )
+                                    ->get();
 
-                                    $firstLog = $vehicleLog->first();
-
-                                    if ($firstLog) {
-
-                                        $prevLog = VehicleLogHistory::where('identifier', $serialNumber)
-                                            ->where('id', '<', $firstLog->id) // Corrected condition
-                                            ->orderBy('id', 'desc') // Order by event date time descending
-                                            ->first();
-
-                                        if ($prevLog) {
-
-                                            $obd1 = $firstLog->obd_odometer;
-
-                                            $obd2 = $prevLog->obd_odometer;
-
-                                            $diff = $obd1 - $obd2;
-
-                                            $odometerChange += $diff;
-
-                                            $prevLog->update([
-                                                'is_notify' => 1,
-                                            ]);
-                                        }
-                                    }
-
-                                    $vehicleLogCount = count($vehicleLog);
-
-                                    foreach ($vehicleLog as $key => $log) {
-
-                                        $currentData = $log->obd_odometer;  // Current data
-
-                                        if ($key + 1 < $vehicleLogCount) {
-
-                                            $nextData = $vehicleLog[$key + 1]->obd_odometer;  // Next data
-
-                                            $milesData = $nextData - $currentData;
-
-                                            $odometerChange += $milesData;
-                                        }
-                                    }
+                                if (count($vehicleLog) == 0 && count($bluetoothLog) == 0) {
 
                                     $firstName = $data->first_name;
 
@@ -167,36 +156,50 @@ class NotifyNonDriving extends Command
 
                                     $message = $firstName . ' ' . $lastName . ' ' . 'your current log is in driving with' . ' ' . $vehicle->name . ' ' . 'and data is not being recieved from device, Please change your current duty status. Thank You!';
 
-                                    if ($odometerChange > 0) {
-                                        // Send notification to the current user
-                                        $user1 = User::find($id);
-                                        if ($user1) {
-                                            $notification1 = new NonDrivingNotification($message, $url, $id);
-                                            $user1->notify($notification1);
-                                        }
-
-                                        // Send notification to the master user
-                                        $user2 = User::find($master);
-                                        if ($user2) {
-                                            $notification2 = new NonDrivingNotification($message, $url, $master);
-                                            $user2->notify($notification2);
-                                        }
+                                    // Send notification to the current user
+                                    $user1 = User::find($id);
+                                    if ($user1) {
+                                        $notification1 = new NonDrivingNotification($message, $url, $id);
+                                        $user1->notify($notification1);
                                     }
 
+                                    // Send notification to the master user
+                                    $user2 = User::find($master);
+                                    if ($user2) {
+                                        $notification2 = new NonDrivingNotification($message, $url, $master);
+                                        $user2->notify($notification2);
+                                    }
 
-                                    VehicleLogHistory::where('identifier', $serialNumber)
-                                        ->where('is_notify', 0)
-                                        ->where('speed', '<', 5)
-                                        // ->whereBetween('event_date_time', [$create, $last])
-                                        ->orderBy('event_date_time', 'asc')
-                                        ->update(['is_notify' => 1]);
+                                    $newDriverLog = DriverShiftLog::create([
+                                        'driver_id' => $id,
+                                        'start_log_time' => $driverLog->start_log_time,
+                                        'end_log_time' => null,
+                                        "current_shift_status" => 1,
+                                        'vehicle_id' => $vehicleId,
+                                        'system_entry' => 1,
+                                        "accepted" => 1,
+                                        'is_add_approved' => 1,
+                                        'is_edit_approved' => 1,
+                                        'is_assign_approved' => 1,
+                                        'is_edit' => 1,
+                                        'is_active' => 1,
+                                    ]);
 
-                                    VehicleLogHistory::where('identifier', $serialNumber)
-                                        ->where('is_notify', 0)
-                                        ->where('speed', '<', 5)
-                                        // ->where('event_date_time', '<', $create)
-                                        ->orderBy('event_date_time', 'asc')
-                                        ->update(['is_notify' => 1]);
+                                    $startData = shift_cycle_start_check($newDriverLog, $currentTime, $locationName, $rule_ids, 0);
+
+                                    if (count($startData) > 0) {
+                                        $shiftStart = $startData[0];
+                                        $cycleStart = $startData[1];
+                                    }
+
+                                    if ($newDriverLog) {
+
+                                        $newDriverLog->update([
+                                            'shift_start' => $shiftStart,
+                                            'cycle_start' => $cycleStart,
+                                        ]);
+                                    }
+
                                 }
                             }
                         }
