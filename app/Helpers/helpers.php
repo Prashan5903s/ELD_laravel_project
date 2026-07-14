@@ -10841,7 +10841,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                     $endTimeFormatted,
 
-                    $vehicle->name,
+                    $vehicle ? $vehicle->name : '',
 
                 ];
             }
