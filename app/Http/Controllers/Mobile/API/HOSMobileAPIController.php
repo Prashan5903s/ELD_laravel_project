@@ -191,7 +191,7 @@ class HOSMobileAPIController extends Controller
                     } else {
 
                         $vehicleIds = VehicleAssign::where('driver_id', $driverId)
-                            ->pluck('vehicle_id');
+                            ->pluck('vechile_id');
 
                         $deviceIds = Device::whereIn('vehicle_id', $vehicleIds)
                             ->pluck('id');
@@ -205,8 +205,6 @@ class HOSMobileAPIController extends Controller
                                 ->value('vehicle_id');
                         }
                     }
-
-
 
                     DriverShiftLog::create([
                         "driver_id" => $driverId,
