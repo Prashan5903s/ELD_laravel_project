@@ -197,7 +197,7 @@ class HOSMobileAPIController extends Controller
                             ->pluck('id');
 
                         $latestVehLog = VehicleLogHistory::whereIn('device_id', $deviceIds)
-                            ->latest('start_log_time')
+                            ->latest('event_date_time')
                             ->first();
 
                         if ($latestVehLog) {
