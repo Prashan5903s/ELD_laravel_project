@@ -25,8 +25,6 @@ class UserDeviceAPIController extends Controller
                     'device_id' => 'required|string|max:255',
                     'fcm_token' => 'required|string',
                     'platform' => 'required|in:android,ios',
-                    'is_active' => 'sometimes|boolean',
-                    'created_by' => 'required|integer',
                 ]);
 
             } catch (ValidationException $e) {
