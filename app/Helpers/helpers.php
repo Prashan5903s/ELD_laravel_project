@@ -11172,7 +11172,9 @@ function hos_date_data($id, $startTime, $endTime)
 
                     $engineHour = $engineHour > 0 ? ($engineHour / 3600) : 0;
 
-                    $vehicle = Vehicle::find($vehicle_id)->name;
+                    $vehicle = Vehicle::find($vehicle_id);
+
+                    $vehicleName = $vehicle ? $vehicle->name : '';
 
                     $startLog = $datai;
 
@@ -11188,7 +11190,7 @@ function hos_date_data($id, $startTime, $endTime)
                         $duration,
                         $status,
                         $message,
-                        $vehicle,
+                        $vehicleName,
                         $time_start,
                         $time_end,
                         $locationStart,
