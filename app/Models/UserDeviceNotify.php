@@ -9,7 +9,7 @@ class UserDeviceNotify extends Model
 {
     use HasFactory;
 
-    protected $table = 'user_device';
+    protected $table = 'user_device_notify';
 
     protected $fillable = [
         'user_id',
