@@ -8,6 +8,10 @@ use App\Models\RuleAssign;
 use App\Models\User;
 use App\Models\UserInfo;
 use Carbon\Carbon;
+use App\Models\VehicleAssign;
+use App\Models\Vehicle;
+use App\Models\VehicleLogHistory;
+use App\Models\BluetoothLogData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -174,9 +178,39 @@ class HOSMobileAPIController extends Controller
                     ], 200);
                 } else {
 
+                    $vehicleId = null;
+
+                    $bluetoothLog = BluetoothLogData::where('driver_id', $driverId)
+                        ->latest('created_at')
+                        ->first();
+
+                    if ($bluetoothLog) {
+
+                        $vehicleId = $bluetoothLog->vehicle_id;
+
+                    } else {
+
+                        $vehicleIds = VehicleAssign::where('driver_id', $driverId)
+                            ->pluck('vehicle_id');
+
+                        $deviceIds = Device::whereIn('vehicle_id', $vehicleIds)
+                            ->pluck('id');
+
+                        $latestVehLog = VehicleLogHistory::whereIn('device_id', $deviceIds)
+                            ->latest('start_log_time')
+                            ->first();
+
+                        if ($latestVehLog) {
+                            $vehicleId = Device::where('id', $latestVehLog->device_id)
+                                ->value('vehicle_id');
+                        }
+                    }
+
+
+
                     DriverShiftLog::create([
                         "driver_id" => $driverId,
-                        "vehicle_id" => null,
+                        "vehicle_id" => $vehicleId,
                         "start_log_time" => $currentTime,
                         "end_log_time" => null,
                         'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
