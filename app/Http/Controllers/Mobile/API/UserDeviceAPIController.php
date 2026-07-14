@@ -15,10 +15,6 @@ class UserDeviceAPIController extends Controller
     {
         $auth = Auth::check();
 
-        return response()->json([
-            "Message" => "Status"
-        ]);
-
         if ($auth) {
 
             $user = Auth::user();
