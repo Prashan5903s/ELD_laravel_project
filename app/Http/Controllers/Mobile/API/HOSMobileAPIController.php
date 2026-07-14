@@ -143,7 +143,7 @@ class HOSMobileAPIController extends Controller
                         'odometer' => $odometer,
                         'engineHour' => $engineHour,
                         'current_shift_status' => $id,
-                        'message_reason' => $messageReason,
+                        'message_reason' => $text,
                         'is_add_approved' => 1,
                         'is_edit_approved' => 1,
                         'is_edit' => 1,
