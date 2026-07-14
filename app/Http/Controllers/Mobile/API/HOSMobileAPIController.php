@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 class HOSMobileAPIController extends Controller
 {
 
-    public function change_mobile_duty_status($id, $lat, $long, $text)
+    public function change_mobile_duty_status(Request $request)
     {
 
         $cycle_start = 0;
@@ -31,6 +31,27 @@ class HOSMobileAPIController extends Controller
         // Check if the user is authenticated
         if (Auth::check()) {
 
+            try {
+
+                $request->validate([
+                    'shift_id' => 'required|string|max:255',
+                    'text' => 'required|string',
+                ]);
+
+            } catch (ValidationException $e) {
+
+                return response()->json([
+                    'status' => 'failure',
+                    'statusCode' => 422,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors(),
+                ], 422);
+
+            }
+
+            $id = $request->shift_id;
+            $text = $request->text;
+
             $user = Auth::user();
 
             $driverId = $user->id;
@@ -40,21 +61,6 @@ class HOSMobileAPIController extends Controller
 
             // Check if the user is of type 'U' and their master is of type 'TR'
             if ($user->user_type == 'U' && $master && $master->user_type == 'TR') {
-
-                // Validate the text input
-                $validator = Validator::make(
-                    ['message_reason' => $text],
-                    ['message_reason' => 'required|string|max:255']
-                );
-
-                if ($validator->fails()) {
-
-                    return response()->json([
-                        'status' => 'failure',
-                        'statusCode' => 422,
-                        'message' => $validator->errors()->first('message_reason')
-                    ], 422);
-                }
 
                 $currentTime = get_current_time_driver($driverId);
 
