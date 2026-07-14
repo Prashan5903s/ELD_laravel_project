@@ -89,8 +89,8 @@ class HOSMobileAPIController extends Controller
                             $updatedBtwLog = DriverShiftLog::create([
                                 'created_at' => $currentTime,
                                 'start_log_time' => $latestEndLogTime,
-                                'start_log_time_unix' => Carbon::parse($latestEndLogTime)->timestamp,
                                 "end_log_time" => Carbon::parse($currentTime),
+                                'start_log_time_unix' => Carbon::parse($latestEndLogTime)->timestamp,
                                 'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
                                 'driver_id' => $driverId,
                                 'vehicle_id' => $vehicleId,
@@ -174,11 +174,23 @@ class HOSMobileAPIController extends Controller
                     ], 200);
                 } else {
 
-                    return response()->json([
-                        'status' => "Failure",
-                        "statusCode" => 404,
-                        "message" => "Latest log does not exist"
-                    ], 404);
+                    DriverShiftLog::create([
+                        "driver_id" => $driverId,
+                        "vehicle_id" => null,
+                        "start_log_time" => $currentTime,
+                        "end_log_time" => null,
+                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
+                        'end_log_time_unix' => null,
+                        'message_reason' => $text,
+                        'current_shift_status' => $id,
+                        "is_add_approved" => 1,
+                        'is_edit_approved' => 1,
+                        'is_edit' => 1,
+                        "is_active" => 1,
+                        'shift_start' => 1,
+                        'cycle_start' => 1,
+                        "created_by" => $driverId
+                    ]);
                 }
             } else {
 
