@@ -42,7 +42,7 @@ class UserDeviceAPIController extends Controller
 
                 UserDeviceNotify::where('user_id', $user->id)
                     ->update([
-                        'is_active' => false
+                        'status' => false
                     ]);
 
                 $exist_device = UserDeviceNotify::create([
@@ -50,7 +50,7 @@ class UserDeviceAPIController extends Controller
                     'device_id' => $request->device_id,
                     'platform' => $request->platform,
                     'fcm_token' => $request->fcm_token,
-                    'is_active' => true,
+                    'status' => true,
                     'created_by' => $user->id,
                 ]);
 
