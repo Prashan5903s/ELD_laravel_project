@@ -223,6 +223,13 @@ class HOSMobileAPIController extends Controller
                         'cycle_start' => 1,
                         "created_by" => $driverId
                     ]);
+
+                    return response()->json([
+                        'status' => "success",
+                        'statusCode' => 200,
+                        'message' => 'Saved successfully'
+                    ], 200);
+
                 }
             } else {
 
