@@ -8,7 +8,7 @@ use App\Models\Country;
 use App\Models\Device;
 use App\Models\DriverShiftLog;
 use App\Models\Language;
-use App\Models\ListOption;
+use App\Models\BluetoothLogData;
 use App\Models\Location;
 use App\Models\RuleAssign;
 use App\Models\State;
@@ -45,7 +45,7 @@ class DriverController extends Controller
         } else {
             App::setLocale($lang);
         }
-        
+
         $user = Auth::user();
         $userIds = Auth::user()->master_id;
         $trans = User::where('master_id', $userIds)->get();
@@ -340,6 +340,35 @@ class DriverController extends Controller
 
         // Data found, pass it to the view
         return view('transport.report.index', compact('data'));
+    }
+
+    public function bluetooth_log(Request $request, $lang)
+    {
+        if (empty($lang)) {
+            return redirect()->route('transport.dashboard', ['en']);
+        }
+
+        $languag = Language::where('Short_name', $lang)->first();
+        if (!$languag) {
+            App::setLocale('en');
+            return redirect()->route('transport.dashboard', ['en']);
+        } else {
+            App::setLocale($lang);
+        }
+
+
+        // Retrieve data from ApiLogger model
+        $data = BluetoothLogData::orderBy('created_at', 'desc')->with("user")
+            ->paginate(10);
+
+        // Check if data is retrieved
+        if ($data->isEmpty()) {
+            // Data not found, handle accordingly (e.g., redirect, display message)
+            return redirect()->back()->with('error', 'No data found for the specified IP address.');
+        }
+
+        // Data found, pass it to the view
+        return view('transport.report.bluetooth', compact('data'));
     }
 
     public function report_vechile(Request $request, $lang)
@@ -978,7 +1007,7 @@ class DriverController extends Controller
                                     if ($driverLog) {
 
                                         $firstDriver = $driverLog->first();
-                                        
+
                                         return $driverLog;
 
                                         $firstTime = $firstDriver->created_at;
@@ -1121,7 +1150,7 @@ class DriverController extends Controller
                                                                     } else {
                                                                         $aboveDrTime = Carbon::parse($currentTime);
                                                                     }
-return $aboveDrTime;
+                                                                    return $aboveDrTime;
                                                                     $breakViolTime = $aboveDrTime->diffInSeconds($rowONTime);
 
                                                                 }

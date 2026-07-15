@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class BluetoothLogData extends Model
 {
@@ -20,4 +21,12 @@ class BluetoothLogData extends Model
         "created_by",
         "updated_by"
     ];
+
+    public function user()
+    {
+
+        return $this->hasOne(User::class, 'id', 'driver_id');
+
+    }
+
 }

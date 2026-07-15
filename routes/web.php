@@ -14,7 +14,7 @@ use App\Http\Controllers\Reseller\RSController;
 
 use App\Http\Controllers\SuperAdmin\Role\RoleController;
 
-Use App\Http\Controllers\Company\CompController;
+use App\Http\Controllers\Company\CompController;
 
 use App\Http\Controllers\Transport\Driver\DriverController;
 
@@ -108,13 +108,13 @@ use Illuminate\Support\Facades\Route;
 
  */
 
- 
+
 
 Route::get('check/eld-output-file/{type}/{token}', [AdminProfileController::class, 'eld_output_file']);
 
 
 
-Route::get('/greet/{name}', function($name) {
+Route::get('/greet/{name}', function ($name) {
 
     echo json_encode(check_eld_rules(79, 1, '2024-07-22', '2024-07-22'));
 
@@ -140,15 +140,15 @@ Route::get('homepage', [HomeController::class, 'index']);
 
 Route::middleware(['auth', 'SA'])->group(function () {
 
-    
+
 
     Route::post('wc/check-email', [DashboardController::class, 'checkMail']);
 
-    
+
 
     Route::get('admin/dashboard', [AdminProfileController::class, 'dashboard'])->name('admin.dashboard');
 
-    
+
 
     Route::resource('hardware/device', DeviceAdminController::class)->names('device.admin.data');
 
@@ -170,7 +170,7 @@ Route::middleware(['auth', 'SA'])->group(function () {
 
     Route::get('user-list/{ut}', [AdminProfileController::class, 'view_total'])->name('admin.view.total');
 
-    
+
 
     Route::get('user/view', [UserViewController::class, 'index'])->name('user.view');
 
@@ -182,7 +182,7 @@ Route::middleware(['auth', 'SA'])->group(function () {
 
     Route::resource('language', LanguageController::class);
 
-    
+
 
     Route::get('hardware/devices/{device}', [HardwareController::class, 'device_index'])->name('hardware.device.name');
 
@@ -232,11 +232,11 @@ Route::middleware(['auth', 'SA'])->group(function () {
 
 Route::middleware(['auth', 'WC'])->group(function () {
 
-    
+
 
     Route::post('rs/check-email', [DashboardController::class, 'checkMail']);
 
-    
+
 
     Route::get('wc/shadow/login/{ut}/{id}', [WhiteProfileController::class, 'changeUser'])->name('wc.user.change');
 
@@ -282,19 +282,19 @@ Route::middleware(['auth', 'WC'])->group(function () {
 
 Route::middleware(['auth', 'EC'])->group(function () {
 
-    
+
 
     Route::post('ec/check-email', [DashboardController::class, 'checkMail']);
 
-    
+
 
     Route::get('company/dashboard', [CompController::class, 'index'])->name('company.dashboard');
 
-    
+
 
     Route::get('company/user/change', [CompController::class, 'change_user'])->name('company.user.change')->middleware('ecCheck');
 
-    
+
 
     Route::get('ec/change/{id}', [CompController::class, 'chUsers'])->name('change.ec.user');
 
@@ -302,7 +302,7 @@ Route::middleware(['auth', 'EC'])->group(function () {
 
     Route::get('company/dashboard/change/{id}', [CompController::class, 'change_dashboard'])->name('company.dashboard.change');
 
-    
+
 
     Route::get('ec/shadow/login/{ut}/{id}', [CompController::class, 'changeUser'])->name('ec.user.change');
 
@@ -328,15 +328,15 @@ Route::middleware(['auth', 'EC'])->group(function () {
 
 Route::middleware(['auth', 'RS'])->group(function () {
 
-    
+
 
     Route::post('user/check-email', [DashboardController::class, 'checkMail']);
 
-    
+
 
     Route::get('rs/shadow/login/{ut}/{id}', [RSController::class, 'changeUser'])->name('rs.user.change');
 
-    
+
 
     Route::get('reseller/dashboard', [RSController::class, 'index'])->name('reseller.dashboard');
 
@@ -472,6 +472,7 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
         Route::get('report/data-log', [DriverController::class, 'data_log'])->name('driver.report.data')->middleware('permission:18');
 
+        Route::get('report/data-bluetooth', [DriverController::class, 'bluetooth_log'])->name('driver.report.bluetooth')->middleware('permission:18');
 
 
         Route::get('report/vechile', [DriverController::class, 'report_vechile'])->name('driver.report.vechile')->middleware('permission:19');
@@ -624,7 +625,7 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
     });
 
-    
+
 
 });
 
