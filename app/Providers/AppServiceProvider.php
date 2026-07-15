@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Language;
 use App\Models\User;
 use App\Models\UserInfo;
+use Illuminate\Pagination\Paginator;
 use App\Models\Hardware;
 
 class AppServiceProvider extends ServiceProvider
