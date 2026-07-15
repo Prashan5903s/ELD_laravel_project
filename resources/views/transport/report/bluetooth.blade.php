@@ -143,12 +143,23 @@
                                                 </tbody>
                                             </table>
 
-                                            <!-- Pagination Links -->
-                                            <div class="d-flex justify-content-center">
-                                                {{ $data->links() }}
+                                            <div class="d-flex justify-content-between align-items-center mt-5">
+
+                                                <div>
+                                                    Showing
+                                                    {{ $data->firstItem() ?? 0 }}
+                                                    to
+                                                    {{ $data->lastItem() ?? 0 }}
+                                                    of
+                                                    {{ $data->total() }}
+                                                    results
+                                                </div>
+
+                                                <div>
+                                                    {{ $data->links() }}
+                                                </div>
+
                                             </div>
-
-
 
 
 
