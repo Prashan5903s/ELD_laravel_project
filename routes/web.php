@@ -474,7 +474,6 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
         Route::get('report/data-bluetooth', [DriverController::class, 'bluetooth_log'])->name('driver.report.bluetooth')->middleware('permission:18');
 
-
         Route::get('report/vechile', [DriverController::class, 'report_vechile'])->name('driver.report.vechile')->middleware('permission:19');
 
 
