@@ -348,26 +348,19 @@ class DriverController extends Controller
             return redirect()->route('transport.dashboard', ['en']);
         }
 
-        $languag = Language::where('Short_name', $lang)->first();
-        if (!$languag) {
+        $language = Language::where('Short_name', $lang)->first();
+
+        if (!$language) {
             App::setLocale('en');
             return redirect()->route('transport.dashboard', ['en']);
-        } else {
-            App::setLocale($lang);
         }
 
+        App::setLocale($lang);
 
-        // Retrieve data from ApiLogger model
-        $data = BluetoothLogData::orderBy('created_at', 'desc')->with("user")
+        $data = BluetoothLogData::with('user')
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // Check if data is retrieved
-        if ($data->isEmpty()) {
-            // Data not found, handle accordingly (e.g., redirect, display message)
-            return redirect()->back()->with('error', 'No data found for the specified IP address.');
-        }
-
-        // Data found, pass it to the view
         return view('transport.report.bluetooth', compact('data'));
     }
 

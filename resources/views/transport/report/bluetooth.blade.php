@@ -104,64 +104,42 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody class="text-gray-600 fw-semibold" id="userTableBody">
-                                                    @php
-                                                        // Get the total number of items
-                                                        $totalItems = $data->total();
-                                                    @endphp
 
                                                     @foreach ($data as $key => $value)
-                                                        @php
-                                                            // Calculate the current item position
-                                                            $currentItemPosition =
-                                                                ($data->currentPage() - 1) * $data->perPage() +
-                                                                $key +
-                                                                1;
 
-                                                            // Determine the interval time
-                                                            $intervalTime = '';
-                                                            if ($key < $totalItems - 1) {
-                                                                $nextRow = $data->get($key + 1);
-                                                                if ($nextRow && isset($nextRow->service_call_date)) {
-                                                                    $nextServiceCallDate = \Carbon\Carbon::parse(
-                                                                        $nextRow->service_call_date,
-                                                                    );
-                                                                    $currentServiceCallDate = \Carbon\Carbon::parse(
-                                                                        $value->service_call_date,
-                                                                    );
-                                                                    $intervalTime = $currentServiceCallDate
-                                                                        ->diff($nextServiceCallDate)
-                                                                        ->format('%H:%I:%S');
-                                                                } else {
-                                                                    // If data for the next row is not found, set interval time to "Data not found"
-                                                                    $intervalTime = 'Data not found';
-                                                                }
-                                                            } else {
-                                                                // If it's the last row of the last page, set interval time to N/A
-                                                                $intervalTime = 'N/A';
-                                                            }
-
-                                                        @endphp
                                                         <tr>
-                                                            <td>{{ $currentItemPosition }}</td>
-                                                            <td>{{ $value->user->first_name }} {{ $value->user->last_name }}
+                                                            <td>
+                                                                {{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}
                                                             </td>
+
+                                                            <td>
+                                                                {{ optional($value->user)->first_name }}
+                                                                {{ optional($value->user)->last_name }}
+                                                            </td>
+
                                                             <td class="json-cell" data-log="{{ $value->log_data }}">
                                                                 {{ Str::limit($value->log_data, 30) }}
-                                                                @if (strlen($value->log_data) > 30)
+
+                                                                @if(strlen($value->log_data) > 30)
                                                                     <a href="#" class="more-link">More</a>
                                                                 @endif
                                                             </td>
+
                                                             <td class="json-cell" data-log="{{ $value->request_json }}">
                                                                 {{ Str::limit($value->request_json, 30) }}
-                                                                @if (strlen($value->request_json) > 30)
+
+                                                                @if(strlen($value->request_json) > 30)
                                                                     <a href="#" class="more-link">More</a>
                                                                 @endif
                                                             </td>
+
                                                             <td class="text-end">
-                                                                {{ \Carbon\Carbon::parse($value->service_call_date)->format('h:i A d-m-Y') }}
+                                                                {{ \Carbon\Carbon::parse($value->created_at)->format('h:i A d-m-Y') }}
                                                             </td>
                                                         </tr>
+
                                                     @endforeach
+
                                                 </tbody>
                                             </table>
 
