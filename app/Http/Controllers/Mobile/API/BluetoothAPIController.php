@@ -102,13 +102,13 @@ class BluetoothAPIController extends Controller
             ]);
 
             BluetoothLogData::create([
-    "driver_id" => $driverId,
-    "vehicle_id" => $vehicleId,
-    "log_data" => json_encode($request->all()),
-    "request_json" => json_encode($request->request_json),
-    "ip" => $request->ip(),
-    "created_by" => $driverId,
-]);
+                "driver_id" => $driverId,
+                "vehicle_id" => $vehicleId,
+                "log_data" => json_encode($request->all()),
+                "request_json" => json_encode($request->request_json),
+                "ip" => $request->ip(),
+                "created_by" => $driverId,
+            ]);
 
             DB::commit();
 

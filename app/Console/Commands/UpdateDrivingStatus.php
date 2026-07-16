@@ -45,27 +45,32 @@ class UpdateDrivingStatus extends Command
         $mapKey = config('app.Map_key');
 
         foreach ($devices as $device) {
+
             $vehicle = $device->vehicle;
-            if (!$vehicle) continue;
+            if (!$vehicle)
+                continue;
 
             $masterUser = User::find($device->created_by);
-            
-            if (!$masterUser) continue;
+
+            if (!$masterUser)
+                continue;
 
             $timezone = $masterUser->timezone;
-            
+
             $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
             $currentTime = Carbon::parse($currentTime);
-            
+
             $vehicleId = $device->vehicle_id;
 
-            if (!$vehicleId || !is_numeric($vehicleId)) continue;
+            if (!$vehicleId || !is_numeric($vehicleId))
+                continue;
 
             $driverIds = VehicleAssign::where('vechile_id', $vehicleId)
                 ->pluck('driver_id')
                 ->toArray();
 
-            if (empty($driverIds)) continue;
+            if (empty($driverIds))
+                continue;
 
             $vehicleName = $vehicle->name;
             $vehicleVIN = $vehicle->vin;
@@ -97,7 +102,8 @@ class UpdateDrivingStatus extends Command
             foreach ($vehicleLogs as $log) {
                 $eventStart = Carbon::parse($log->event_date_time);
 
-                if ($currentTime->lte($eventStart)) continue;
+                if ($currentTime->lte($eventStart))
+                    continue;
 
                 $message = $log->message_reason;
                 $speed = $log->speed;
@@ -150,6 +156,7 @@ class UpdateDrivingStatus extends Command
                     //         'cycle_start' => $shiftData[1] ?? 0,
                     //     ]);
                     // }
+
                 } else {
 
                     $driverLog = DriverShiftLog::where('driver_id', $userId)

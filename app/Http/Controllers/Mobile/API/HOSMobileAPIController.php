@@ -72,8 +72,6 @@ class HOSMobileAPIController extends Controller
                     $rule_ids = RuleAssign::where('user_id', $driverId)
                         ->pluck('rule_id'); // Get an array of rule_ids from RuleAssign
 
-                    $locationName = null;
-
                     $locationName = fetchFullAddressName($lat, $long);
 
                     $vehicleId = $latestLog->vehicle_id;
@@ -405,6 +403,8 @@ class HOSMobileAPIController extends Controller
                 $request->validate([
                     'shift_id' => 'required|string|max:255',
                     'text' => 'required|string',
+                    'lat' => 'required|numeric',
+                    'long' => 'required|numeric',
                 ]);
 
             } catch (ValidationException $e) {
@@ -420,6 +420,8 @@ class HOSMobileAPIController extends Controller
 
             $id = $request->shift_id;
             $text = $request->text;
+            $long = $request->long;
+            $lat = $request->lat;
 
             $user = Auth::user();
 
@@ -449,13 +451,11 @@ class HOSMobileAPIController extends Controller
                     $rule_ids = RuleAssign::where('user_id', $driverId)
                         ->pluck('rule_id'); // Get an array of rule_ids from RuleAssign
 
-                    $locationName = null;
+                    $locationName = fetchFullAddressName($lat, $long);
 
                     $vehicleId = $latestLog->vehicle_id;
 
                     $device = Device::where('vehicle_id', $vehicleId)->first();
-
-                    $locationName = get_driver_activity_location($device, $key, $currentTime);
 
                     $engineHour = get_driver_activity_rpm($device, $currentTime);
 

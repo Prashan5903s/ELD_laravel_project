@@ -154,7 +154,6 @@ class UpdateVehicleLogHistory extends Command
     // Helper method to convert ISO 8601 datetime to MySQL DATETIME format
 
     private function convertIso8601ToMySqlDateTime($iso8601DateTime)
-
     {
 
         try {
