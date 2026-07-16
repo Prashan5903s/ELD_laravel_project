@@ -38,6 +38,23 @@ class UserDeviceAPIController extends Controller
 
             }
 
+            $existingDevice = UserDeviceNotify::where('user_id', $user->id)
+                ->where('device_id', $request->device_id)
+                ->first();
+
+            if ($existingDevice) {
+                return response()->json([
+                    'status' => 'failure',
+                    'statusCode' => 422,
+                    'message' => 'This device is already registered for the user.',
+                    'errors' => [
+                        'device_id' => [
+                            'The device is already registered for this user.'
+                        ]
+                    ]
+                ], 422);
+            }
+
             try {
 
                 UserDeviceNotify::where('user_id', $user->id)
