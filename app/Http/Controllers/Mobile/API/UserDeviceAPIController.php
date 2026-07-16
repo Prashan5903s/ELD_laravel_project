@@ -13,55 +13,62 @@ class UserDeviceAPIController extends Controller
 {
     public function store(Request $request)
     {
-        $auth = Auth::check();
+        if (!Auth::check()) {
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 401,
+                'message' => 'User authentication failed',
+            ], 401);
+        }
 
-        if ($auth) {
+        $user = Auth::user();
 
-            $user = Auth::user();
+        try {
 
-            try {
+            $request->validate([
+                'device_id' => 'required|string|max:255',
+                'fcm_token' => 'required|string',
+                'platform' => 'required|in:android,ios',
+            ]);
 
-                $request->validate([
-                    'device_id' => 'required|string|max:255',
-                    'fcm_token' => 'required|string',
-                    'platform' => 'required|in:android,ios',
+        } catch (ValidationException $e) {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 422,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        try {
+
+            // Deactivate all devices for this user
+            UserDeviceNotify::where('user_id', $user->id)
+                ->update([
+                    'is_active' => false
                 ]);
 
-            } catch (ValidationException $e) {
-
-                return response()->json([
-                    'status' => 'failure',
-                    'statusCode' => 422,
-                    'message' => 'Validation failed',
-                    'errors' => $e->errors(),
-                ], 422);
-
-            }
-
-            $existingDevice = UserDeviceNotify::where('user_id', $user->id)
-                ->where('device_id', $request->device_id)
+            // Check if this device already exists
+            $device = UserDeviceNotify::where('device_id', $request->device_id)
                 ->first();
 
-            if ($existingDevice) {
-                return response()->json([
-                    'status' => 'failure',
-                    'statusCode' => 422,
-                    'message' => 'This device is already registered for the user.',
-                    'errors' => [
-                        'device_id' => [
-                            'The device is already registered for this user.'
-                        ]
-                    ]
-                ], 422);
-            }
+            if ($device) {
 
-            try {
+                // Update existing device
+                $device->update([
+                    'user_id' => $user->id,
+                    'platform' => $request->platform,
+                    'fcm_token' => $request->fcm_token,
+                    'is_active' => true,
+                    'updated_by' => $user->id,
+                ]);
 
-                UserDeviceNotify::where('user_id', $user->id)
-                    ->update([
-                        'is_active' => false
-                    ]);
+                $exist_device = $device;
 
+            } else {
+
+                // Create new device
                 $exist_device = UserDeviceNotify::create([
                     'user_id' => $user->id,
                     'device_id' => $request->device_id,
@@ -70,31 +77,23 @@ class UserDeviceAPIController extends Controller
                     'is_active' => true,
                     'created_by' => $user->id,
                 ]);
-
-                return response()->json([
-                    'status' => 'success',
-                    'statusCode' => 200,
-                    'message' => 'Device id saved successfully',
-                    'data' => $exist_device,
-                ], 200);
-
-            } catch (Exception $e) {
-
-                return response()->json([
-                    'status' => 'failure',
-                    'statusCode' => 500,
-                    'message' => 'Something went wrong.',
-                    'error' => $e->getMessage(),
-                ], 500);
-
             }
 
-        }
+            return response()->json([
+                'status' => 'success',
+                'statusCode' => 200,
+                'message' => 'Device registered successfully.',
+                'data' => $exist_device,
+            ], 200);
 
-        return response()->json([
-            'status' => 'failure',
-            'statusCode' => 401,
-            'message' => 'User authentication failed',
-        ], 401);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 500,
+                'message' => 'Something went wrong.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
