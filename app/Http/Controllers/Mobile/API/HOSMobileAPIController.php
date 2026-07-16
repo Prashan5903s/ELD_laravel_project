@@ -388,6 +388,242 @@ class HOSMobileAPIController extends Controller
 
         return response()->json($data, $data['statusCode']);
     }
+
+    public function new_change_mobile_duty_status(Request $request)
+    {
+
+        $cycle_start = 0;
+        $shift_start = 0;
+
+        $key = config('app.Map_key');  // Fetch the Google Maps API key
+
+        // Check if the user is authenticated
+        if (Auth::check()) {
+
+            try {
+
+                $request->validate([
+                    'shift_id' => 'required|string|max:255',
+                    'text' => 'required|string',
+                ]);
+
+            } catch (ValidationException $e) {
+
+                return response()->json([
+                    'status' => 'failure',
+                    'statusCode' => 422,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors(),
+                ], 422);
+
+            }
+
+            $id = $request->shift_id;
+            $text = $request->text;
+
+            $user = Auth::user();
+
+            $driverId = $user->id;
+
+            // Find the master user
+            $master = User::find($user->master_id);
+
+            // Check if the user is of type 'U' and their master is of type 'TR'
+            if ($user->user_type == 'U' && $master && $master->user_type == 'TR') {
+
+                $currentTime = get_current_time_driver($driverId);
+
+                $currentTime = Carbon::parse($currentTime);
+
+                $latestLog = DriverShiftLog::where('driver_id', $driverId)
+                    ->where('is_add_approved', 1)
+                    ->latest('start_log_time')
+                    ->first();
+
+                if ($latestLog) {
+
+                    $messageReason = $latestLog->message_reason;
+
+                    $latestEndLogTime = $latestLog->end_log_time;
+
+                    $rule_ids = RuleAssign::where('user_id', $driverId)
+                        ->pluck('rule_id'); // Get an array of rule_ids from RuleAssign
+
+                    $locationName = null;
+
+                    $vehicleId = $latestLog->vehicle_id;
+
+                    $device = Device::where('vehicle_id', $vehicleId)->first();
+
+                    $locationName = get_driver_activity_location($device, $key, $currentTime);
+
+                    $engineHour = get_driver_activity_rpm($device, $currentTime);
+
+                    $odometer = get_driver_activity_odometer($device, $currentTime);
+
+                    if (!is_null($latestEndLogTime)) {
+
+                        if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
+
+                            $updatedBtwLog = DriverShiftLog::create([
+                                'created_at' => $currentTime,
+                                'start_log_time' => $latestEndLogTime,
+                                "end_log_time" => Carbon::parse($currentTime),
+                                'start_log_time_unix' => Carbon::parse($latestEndLogTime)->timestamp,
+                                'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
+                                'driver_id' => $driverId,
+                                'vehicle_id' => $vehicleId,
+                                'location_name' => $locationName,
+                                'odometer' => $odometer,
+                                'engineHour' => $engineHour,
+                                'current_shift_status' => 1,
+                                'message_reason' => $messageReason,
+                                'is_add_approved' => 1,
+                                'is_edit_approved' => 1,
+                                'is_edit' => 1,
+                                'created_by' => Auth::user()->id,
+                            ]);
+
+                            $startBtwData = shift_cycle_start_check($updatedBtwLog, $currentTime, $locationName, $rule_ids, 0);
+
+                            $shift_btw_start = 0;
+                            $cycle_btw_start = 0;
+
+                            if (count($startBtwData) > 0) {
+                                $shift_btw_start = $startBtwData[0];
+                                $cycle_btw_start = $startBtwData[1];
+                            }
+
+                            $updatedBtwLog->update([
+                                'shift_start' => $shift_btw_start,
+                                'cycle_start' => $cycle_btw_start,
+                            ]);
+
+                        }
+                    }
+
+                    $updatedLatestLog = DriverShiftLog::create([
+                        'created_at' => $currentTime,
+                        'start_log_time' => $currentTime,
+                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
+                        'driver_id' => $driverId,
+                        'vehicle_id' => $vehicleId,
+                        'location_name' => $locationName,
+                        'odometer' => $odometer,
+                        'engineHour' => $engineHour,
+                        'current_shift_status' => $id,
+                        'message_reason' => $text,
+                        'is_add_approved' => 1,
+                        'is_edit_approved' => 1,
+                        'is_edit' => 1,
+                        'created_by' => Auth::user()->id,
+                    ]);
+
+                    $latestLogEndTIme = is_null($latestEndLogTime) ? Carbon::parse($currentTime) : Carbon::parse($latestEndLogTime);
+
+                    if (!Carbon::parse($latestLogEndTIme)->ne($currentTime)) {
+
+                        $latestLog->update([
+                            'end_log_time' => $currentTime,
+                            'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
+                            'location_end' => $locationName,
+                            'odometer_end' => $odometer,
+                            'engineHour' => $engineHour
+                        ]);
+
+
+                    }
+
+                    $startData = shift_cycle_start_check($updatedLatestLog, $currentTime, $locationName, $rule_ids, 0);
+
+                    if (count($startData) > 0) {
+                        $shift_start = $startData[0];
+                        $cycle_start = $startData[1];
+                    }
+
+                    $updatedLatestLog->update([
+                        'shift_start' => $shift_start,
+                        'cycle_start' => $cycle_start,
+                    ]);
+
+                    return response()->json([
+                        'status' => "success",
+                        'statusCode' => 200,
+                        'message' => 'Saved successfully'
+                    ], 200);
+                } else {
+
+                    $vehicleId = null;
+
+                    $bluetoothLog = BluetoothLogData::where('driver_id', $driverId)
+                        ->latest('created_at')
+                        ->first();
+
+                    if ($bluetoothLog) {
+
+                        $vehicleId = $bluetoothLog->vehicle_id;
+
+                    } else {
+
+                        $vehicleIds = VehicleAssign::where('driver_id', $driverId)
+                            ->pluck('vechile_id');
+
+                        $deviceIds = Device::whereIn('vehicle_id', $vehicleIds)
+                            ->pluck('id');
+
+                        $latestVehLog = VehicleLogHistory::whereIn('device_id', $deviceIds)
+                            ->latest('event_date_time')
+                            ->first();
+
+                        if ($latestVehLog) {
+                            $vehicleId = Device::where('id', $latestVehLog->device_id)
+                                ->value('vehicle_id');
+                        }
+                    }
+
+                    DriverShiftLog::create([
+                        "driver_id" => $driverId,
+                        "vehicle_id" => $vehicleId,
+                        "start_log_time" => $currentTime,
+                        "end_log_time" => null,
+                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
+                        'end_log_time_unix' => null,
+                        'message_reason' => $text,
+                        'current_shift_status' => $id,
+                        "is_add_approved" => 1,
+                        'is_edit_approved' => 1,
+                        'is_edit' => 1,
+                        "is_active" => 1,
+                        'shift_start' => 1,
+                        'cycle_start' => 1,
+                        "created_by" => $driverId
+                    ]);
+
+                    return response()->json([
+                        'status' => "success",
+                        'statusCode' => 200,
+                        'message' => 'Saved successfully'
+                    ], 200);
+
+                }
+            } else {
+
+                return response()->json([
+                    'status' => 'failure',
+                    'statusCode' => 401,
+                    'message' => "Unauthorized user"
+                ], 401);
+            }
+        } else {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 401,
+                'message' => "Not authenticated"
+            ], 401);
+        }
+    }
+
 }
 
 // <?php
@@ -412,240 +648,7 @@ class HOSMobileAPIController extends Controller
 // class HOSMobileAPIController extends Controller
 // {
 
-//     public function change_mobile_duty_status(Request $request)
-//     {
 
-//         $cycle_start = 0;
-//         $shift_start = 0;
-
-//         $key = config('app.Map_key');  // Fetch the Google Maps API key
-
-//         // Check if the user is authenticated
-//         if (Auth::check()) {
-
-//             try {
-
-//                 $request->validate([
-//                     'shift_id' => 'required|string|max:255',
-//                     'text' => 'required|string',
-//                 ]);
-
-//             } catch (ValidationException $e) {
-
-//                 return response()->json([
-//                     'status' => 'failure',
-//                     'statusCode' => 422,
-//                     'message' => 'Validation failed',
-//                     'errors' => $e->errors(),
-//                 ], 422);
-
-//             }
-
-//             $id = $request->shift_id;
-//             $text = $request->text;
-
-//             $user = Auth::user();
-
-//             $driverId = $user->id;
-
-//             // Find the master user
-//             $master = User::find($user->master_id);
-
-//             // Check if the user is of type 'U' and their master is of type 'TR'
-//             if ($user->user_type == 'U' && $master && $master->user_type == 'TR') {
-
-//                 $currentTime = get_current_time_driver($driverId);
-
-//                 $currentTime = Carbon::parse($currentTime);
-
-//                 $latestLog = DriverShiftLog::where('driver_id', $driverId)
-//                     ->where('is_add_approved', 1)
-//                     ->latest('start_log_time')
-//                     ->first();
-
-//                 if ($latestLog) {
-
-//                     $messageReason = $latestLog->message_reason;
-
-//                     $latestEndLogTime = $latestLog->end_log_time;
-
-//                     $rule_ids = RuleAssign::where('user_id', $driverId)
-//                         ->pluck('rule_id'); // Get an array of rule_ids from RuleAssign
-
-//                     $locationName = null;
-
-//                     $vehicleId = $latestLog->vehicle_id;
-
-//                     $device = Device::where('vehicle_id', $vehicleId)->first();
-
-//                     $locationName = get_driver_activity_location($device, $key, $currentTime);
-
-//                     $engineHour = get_driver_activity_rpm($device, $currentTime);
-
-//                     $odometer = get_driver_activity_odometer($device, $currentTime);
-
-//                     if (!is_null($latestEndLogTime)) {
-
-//                         if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
-
-//                             $updatedBtwLog = DriverShiftLog::create([
-//                                 'created_at' => $currentTime,
-//                                 'start_log_time' => $latestEndLogTime,
-//                                 "end_log_time" => Carbon::parse($currentTime),
-//                                 'start_log_time_unix' => Carbon::parse($latestEndLogTime)->timestamp,
-//                                 'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-//                                 'driver_id' => $driverId,
-//                                 'vehicle_id' => $vehicleId,
-//                                 'location_name' => $locationName,
-//                                 'odometer' => $odometer,
-//                                 'engineHour' => $engineHour,
-//                                 'current_shift_status' => 1,
-//                                 'message_reason' => $messageReason,
-//                                 'is_add_approved' => 1,
-//                                 'is_edit_approved' => 1,
-//                                 'is_edit' => 1,
-//                                 'created_by' => Auth::user()->id,
-//                             ]);
-
-//                             $startBtwData = shift_cycle_start_check($updatedBtwLog, $currentTime, $locationName, $rule_ids, 0);
-
-//                             $shift_btw_start = 0;
-//                             $cycle_btw_start = 0;
-
-//                             if (count($startBtwData) > 0) {
-//                                 $shift_btw_start = $startBtwData[0];
-//                                 $cycle_btw_start = $startBtwData[1];
-//                             }
-
-//                             $updatedBtwLog->update([
-//                                 'shift_start' => $shift_btw_start,
-//                                 'cycle_start' => $cycle_btw_start,
-//                             ]);
-
-//                         }
-//                     }
-
-//                     $updatedLatestLog = DriverShiftLog::create([
-//                         'created_at' => $currentTime,
-//                         'start_log_time' => $currentTime,
-//                         'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-//                         'driver_id' => $driverId,
-//                         'vehicle_id' => $vehicleId,
-//                         'location_name' => $locationName,
-//                         'odometer' => $odometer,
-//                         'engineHour' => $engineHour,
-//                         'current_shift_status' => $id,
-//                         'message_reason' => $text,
-//                         'is_add_approved' => 1,
-//                         'is_edit_approved' => 1,
-//                         'is_edit' => 1,
-//                         'created_by' => Auth::user()->id,
-//                     ]);
-
-//                     $latestLogEndTIme = is_null($latestEndLogTime) ? Carbon::parse($currentTime) : Carbon::parse($latestEndLogTime);
-
-//                     if (!Carbon::parse($latestLogEndTIme)->ne($currentTime)) {
-
-//                         $latestLog->update([
-//                             'end_log_time' => $currentTime,
-//                             'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-//                             'location_end' => $locationName,
-//                             'odometer_end' => $odometer,
-//                             'engineHour' => $engineHour
-//                         ]);
-
-
-//                     }
-
-//                     $startData = shift_cycle_start_check($updatedLatestLog, $currentTime, $locationName, $rule_ids, 0);
-
-//                     if (count($startData) > 0) {
-//                         $shift_start = $startData[0];
-//                         $cycle_start = $startData[1];
-//                     }
-
-//                     $updatedLatestLog->update([
-//                         'shift_start' => $shift_start,
-//                         'cycle_start' => $cycle_start,
-//                     ]);
-
-//                     return response()->json([
-//                         'status' => "success",
-//                         'statusCode' => 200,
-//                         'message' => 'Saved successfully'
-//                     ], 200);
-//                 } else {
-
-//                     $vehicleId = null;
-
-//                     $bluetoothLog = BluetoothLogData::where('driver_id', $driverId)
-//                         ->latest('created_at')
-//                         ->first();
-
-//                     if ($bluetoothLog) {
-
-//                         $vehicleId = $bluetoothLog->vehicle_id;
-
-//                     } else {
-
-//                         $vehicleIds = VehicleAssign::where('driver_id', $driverId)
-//                             ->pluck('vechile_id');
-
-//                         $deviceIds = Device::whereIn('vehicle_id', $vehicleIds)
-//                             ->pluck('id');
-
-//                         $latestVehLog = VehicleLogHistory::whereIn('device_id', $deviceIds)
-//                             ->latest('event_date_time')
-//                             ->first();
-
-//                         if ($latestVehLog) {
-//                             $vehicleId = Device::where('id', $latestVehLog->device_id)
-//                                 ->value('vehicle_id');
-//                         }
-//                     }
-
-//                     DriverShiftLog::create([
-//                         "driver_id" => $driverId,
-//                         "vehicle_id" => $vehicleId,
-//                         "start_log_time" => $currentTime,
-//                         "end_log_time" => null,
-//                         'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-//                         'end_log_time_unix' => null,
-//                         'message_reason' => $text,
-//                         'current_shift_status' => $id,
-//                         "is_add_approved" => 1,
-//                         'is_edit_approved' => 1,
-//                         'is_edit' => 1,
-//                         "is_active" => 1,
-//                         'shift_start' => 1,
-//                         'cycle_start' => 1,
-//                         "created_by" => $driverId
-//                     ]);
-
-//                     return response()->json([
-//                         'status' => "success",
-//                         'statusCode' => 200,
-//                         'message' => 'Saved successfully'
-//                     ], 200);
-
-//                 }
-//             } else {
-
-//                 return response()->json([
-//                     'status' => 'failure',
-//                     'statusCode' => 401,
-//                     'message' => "Unauthorized user"
-//                 ], 401);
-//             }
-//         } else {
-
-//             return response()->json([
-//                 'status' => 'failure',
-//                 'statusCode' => 401,
-//                 'message' => "Not authenticated"
-//             ], 401);
-//         }
-//     }
 
 //     public function hos_mobile_data($start, $end)
 //     {

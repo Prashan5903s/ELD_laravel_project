@@ -37,7 +37,7 @@ Route::middleware(['APILogCheck', 'auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'
 
     Route::post("user/device/notify", [UserDeviceAPIController::class, "store"]);
 
-    // Route::post('change/mobile/duty/status', [HOSMobileAPIController::class, 'change_mobile_duty_status']);
+    Route::post('new/change/mobile/duty/status', [HOSMobileAPIController::class, 'new_change_mobile_duty_status']);
 
     Route::get('change/mobile/duty/status/{id}/{lat}/{long}/{text}', [HOSMobileAPIController::class, 'change_mobile_duty_status']);
 
