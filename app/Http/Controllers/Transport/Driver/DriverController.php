@@ -8,7 +8,7 @@ use App\Models\Country;
 use App\Models\Device;
 use App\Models\DriverShiftLog;
 use App\Models\Language;
-use App\Models\ListOption;
+use App\Models\BluetoothLogData;
 use App\Models\Location;
 use App\Models\RuleAssign;
 use App\Models\State;
@@ -45,7 +45,7 @@ class DriverController extends Controller
         } else {
             App::setLocale($lang);
         }
-        
+
         $user = Auth::user();
         $userIds = Auth::user()->master_id;
         $trans = User::where('master_id', $userIds)->get();
@@ -340,6 +340,28 @@ class DriverController extends Controller
 
         // Data found, pass it to the view
         return view('transport.report.index', compact('data'));
+    }
+
+    public function bluetooth_log(Request $request, $lang)
+    {
+        if (empty($lang)) {
+            return redirect()->route('transport.dashboard', ['en']);
+        }
+
+        $language = Language::where('Short_name', $lang)->first();
+
+        if (!$language) {
+            App::setLocale('en');
+            return redirect()->route('transport.dashboard', ['en']);
+        }
+
+        App::setLocale($lang);
+
+        $data = BluetoothLogData::with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('transport.report.bluetooth', compact('data'));
     }
 
     public function report_vechile(Request $request, $lang)
@@ -978,7 +1000,7 @@ class DriverController extends Controller
                                     if ($driverLog) {
 
                                         $firstDriver = $driverLog->first();
-                                        
+
                                         return $driverLog;
 
                                         $firstTime = $firstDriver->created_at;
@@ -1121,7 +1143,7 @@ class DriverController extends Controller
                                                                     } else {
                                                                         $aboveDrTime = Carbon::parse($currentTime);
                                                                     }
-return $aboveDrTime;
+                                                                    return $aboveDrTime;
                                                                     $breakViolTime = $aboveDrTime->diffInSeconds($rowONTime);
 
                                                                 }

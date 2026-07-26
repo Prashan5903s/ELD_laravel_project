@@ -49,7 +49,7 @@ class UpdateToOffDutyLog extends Command
 
                 $userId = $dev->created_by;
 
-                $user =  User::find($userId);
+                $user = User::find($userId);
 
                 $timeZone = $user->timezone;
 

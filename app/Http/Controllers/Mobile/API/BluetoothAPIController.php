@@ -19,7 +19,6 @@ class BluetoothAPIController extends Controller
 
     public function create(Request $request)
     {
-        
         $driver = Auth::user();
 
         try {
@@ -33,6 +32,7 @@ class BluetoothAPIController extends Controller
                 'latitude' => 'required',
                 'longitude' => 'required',
                 'engineHours' => 'required',
+                "request_json" => "required",
             ]);
 
             DB::beginTransaction();
@@ -40,6 +40,7 @@ class BluetoothAPIController extends Controller
             $vehicle = Vehicle::where("vin", $request->vin)->first();
 
             if (!$vehicle) {
+
                 return response()->json([
                     "status" => "failure",
                     "statusCode" => 404,
@@ -58,11 +59,11 @@ class BluetoothAPIController extends Controller
 
             $userInfo = UserInfo::where("user_id", $driverId)->first();
             $driverTimeZone = $userInfo->home_terminal_timezone;
+
             $currentTime = Carbon::parse()->setTimezone($driverTimeZone)->toDateTimeLocalString();
             $currentTime = Carbon::parse($currentTime);
 
-            $rule_ids = RuleAssign::where('user_id', $driverId)
-                ->pluck('rule_id');
+            $rule_ids = RuleAssign::where('user_id', $driverId)->pluck('rule_id');
 
             bluetooth_log_add($driverId, $startLogTime, $endLogTime, $currentTime);
 
@@ -89,7 +90,7 @@ class BluetoothAPIController extends Controller
                 "is_edit" => 1,
                 "accepted" => 1,
             ]);
-            
+
             $shiftData = shift_cycle_start_check($logCreate, $currentTime, $locationName, $rule_ids, 0);
 
             $shiftStart = $shiftData[0];
@@ -104,6 +105,8 @@ class BluetoothAPIController extends Controller
                 "driver_id" => $driverId,
                 "vehicle_id" => $vehicleId,
                 "log_data" => json_encode($request->all()),
+                "request_json" => json_encode($request->request_json),
+                "ip" => $request->ip(),
                 "created_by" => $driverId,
             ]);
 

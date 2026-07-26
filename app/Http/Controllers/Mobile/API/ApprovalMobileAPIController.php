@@ -253,6 +253,12 @@ class ApprovalMobileAPIController extends Controller
                         $cycleStart = $shiftData[1];
 
                         $Log->update([
+                            "accepted" => $accept,
+                            "is_add_approved" => 1,
+                            "is_edit_approved" => 1,
+                            "is_assign_approved" => 1,
+                            "is_edit" => 1,
+                            "is_active" => 1,
                             "shift_start" => $shiftStart,
                             "cycle_start" => $cycleStart,
                         ]);
@@ -322,6 +328,11 @@ class ApprovalMobileAPIController extends Controller
 
                     $log->update([
                         "accepted" => $accept,
+                        "is_add_approved" => 1,
+                        "is_edit_approved" => 1,
+                        "is_assign_approved" => 1,
+                        "is_edit" => 1,
+                        "is_active" => 1,
                     ]);
 
                     if (!$exist['status']) {
@@ -365,8 +376,6 @@ class ApprovalMobileAPIController extends Controller
                                 'message_reason' => $messageReasonChange,
                                 'is_edit_approved' => 1,
                                 'accepted' => 1,
-                                "is_edit" => 1,
-                                "is_active" => 1,                                
                                 'notes_change' => null,
                                 'vehicle_id_change' => null,
                                 'end_log_time_change' => null,
@@ -461,8 +470,6 @@ class ApprovalMobileAPIController extends Controller
                     $log->update([
                         'accepted' => $accept,
                         'driver_id_change' => null,
-                        "is_edit" => 1,
-                        "is_active" => 1,
                         'end_log_time' => $endLogTimeChange,
                         "end_log_time_unix" => $endLogTimeChange->timestamp
                     ]);
@@ -516,7 +523,8 @@ class ApprovalMobileAPIController extends Controller
                                 'is_assign_approved' => 1,
                                 'is_add_approved' => 1,
                                 'is_edit' => 1,
-                                'is_active' => 1,
+                                "is_edit_approved" => 1,
+                                "is_active" => 1,
                                 'shift_start' => $shift_start,
                                 'cycle_start' => $cycle_start
                             ]);
@@ -611,8 +619,11 @@ class ApprovalMobileAPIController extends Controller
 
                     $log->update([
                         'accepted' => $accept,
+                        "is_add_approved" => 1,
+                        "is_edit_approved" => 1,
+                        "is_assign_approved" => 1,
                         "is_edit" => 1,
-                        "is_active" => 1
+                        "is_active" => 1,
                     ]);
 
                 }

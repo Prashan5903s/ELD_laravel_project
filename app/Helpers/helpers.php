@@ -2835,6 +2835,14 @@ function driver_log_time($id, $time)
 
         $currentShiftStatus = $latestLog->current_shift_status;
 
+        $latestEndLogTime = $latestLog->end_log_time;
+
+        if (!is_null($latestEndLogTime)) {
+            if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
+                $currentShiftStatus = 1;
+            }
+        }
+
         if (in_array($currentShiftStatus, [1, 2, 5])) {
 
             $ruleId = RuleAssign::where('user_id', $id)
@@ -3128,8 +3136,21 @@ function driver_log_time($id, $time)
             )
             ->first();
 
+        $currentShiftStatus = $latestLog->current_shift_status;
+
+        // if (!is_null($latestEndLogTime)) {
+        //   if (Carbon::parse($endTime)->ne($currentTime)) {
+
+        //       $startTime = $endTime;
+
+        //       $endTime = $currentTime;
+
+        //       $currentShiftStatus = 1;
+        //   }
+        // }
+
         $log = ListOption::where("list_id", "driving_status")
-            ->where("option_id", $latestLog->current_shift_status)
+            ->where("option_id", $currentShiftStatus)
             ->pluck("title")
             ->first();
 
@@ -10802,9 +10823,9 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                 ->first();
 
-            $startTimeFormatted = Carbon::parse($create)->format("H:i");
+            $startTimeFormatted = Carbon::parse($create)->format("H:i:s");
 
-            $endTimeFormatted = Carbon::parse($last)->format("H:i");
+            $endTimeFormatted = Carbon::parse($last)->format("H:i:s");
 
             if ($startTimeFormatted != $endTimeFormatted) {
 
@@ -10820,7 +10841,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                     $endTimeFormatted,
 
-                    $vehicle->name,
+                    $vehicle ? $vehicle->name : '',
 
                 ];
             }
@@ -10836,13 +10857,31 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
 
-            $startTimeHI = Carbon::parse($startTime)->format("H:i");
+            $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
 
-            $currentHI = Carbon::parse($currentTime)->format("H:i");
+            $currentHI = Carbon::parse($currentTime)->format("H:i:s");
 
-            $endTimeHI = Carbon::parse($endTime)->format("H:i");
+            $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
-            $lastLogData = $datass[$arrayLen - 1][4];
+            $startTimeLogData = $datass[0][3];
+
+            if ($startTimeLogData != $startTimeHI) {
+
+                $newLog = [
+                    116111,
+                    1,
+                    "Off duty",
+                    $startTimeHI,
+                    $startTimeLogData,
+                    $datass[$arrayLen - 1][5],
+                ];
+
+                array_unshift($datass, $newLog);
+            }
+
+            $arrayLogLength = count($datass);
+
+            $lastLogData = $datass[$arrayLogLength - 1][4];
 
             if ($startTime == $currentTimeStart) {
 
@@ -10866,7 +10905,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
                 }
             } else {
 
-                if ($lastLogData != "23:59") {
+                if ($lastLogData != "23:59:59") {
 
                     $datass[] = [
 
@@ -10878,7 +10917,7 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                         $datass[$arrayLen - 1][4],
 
-                        "23:59",
+                        "23:59:59",
 
                         $datass[$arrayLen - 1][5],
 
@@ -10891,11 +10930,11 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
 
-            $startTimeHI = Carbon::parse($startTime)->format("H:i");
+            $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
 
-            $currentHI = Carbon::parse($currentTime)->format("H:i");
+            $currentHI = Carbon::parse($currentTime)->format("H:i:s");
 
-            $endTimeHI = Carbon::parse($endTime)->format("H:i");
+            $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
             if ($startTime == $currentTimeStart) {
 
@@ -10916,9 +10955,9 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
         if ($startTime == $currentStartTime) {
 
-            $currentStartTime = Carbon::parse($currentTime)->format("H:i");
+            $currentStartTime = Carbon::parse($currentTime)->format("H:i:s");
 
-            $startTime = Carbon::parse($startTime)->format("H:i");
+            $startTime = Carbon::parse($startTime)->format("H:i:s");
 
             $datass[] = [
 
@@ -10937,9 +10976,9 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
             ];
         } else {
 
-            $startTime = Carbon::parse($startTime)->format("H:i");
+            $startTime = Carbon::parse($startTime)->format("H:i:s");
 
-            $endTime = Carbon::parse($endTime)->format("H:i");
+            $endTime = Carbon::parse($endTime)->format("H:i:s");
 
             $datass[] = [1, 1, "Off duty", $startTime, $endTime, "abc"];
         }
@@ -11133,7 +11172,9 @@ function hos_date_data($id, $startTime, $endTime)
 
                     $engineHour = $engineHour > 0 ? ($engineHour / 3600) : 0;
 
-                    $vehicle = Vehicle::find($vehicle_id)->name;
+                    $vehicle = Vehicle::find($vehicle_id);
+
+                    $vehicleName = $vehicle ? $vehicle->name : '';
 
                     $startLog = $datai;
 
@@ -11149,7 +11190,7 @@ function hos_date_data($id, $startTime, $endTime)
                         $duration,
                         $status,
                         $message,
-                        $vehicle,
+                        $vehicleName,
                         $time_start,
                         $time_end,
                         $locationStart,
@@ -11275,6 +11316,8 @@ function hos_date_data($id, $startTime, $endTime)
 
                 $currentHI = Carbon::parse($currentTime)->format("h:i A");
 
+                $arrayLogLen = count($datass);
+
                 if ($startDayTime == $currentTimeStart) {
 
                     $startLogData = $logsData->last();
@@ -11289,22 +11332,22 @@ function hos_date_data($id, $startTime, $endTime)
 
                     $startLogTimeStart = $startLogTimeData[1];
 
-                    $currentAdaressData = $datass[$arraylen - 1][6];
+                    $currentAddressData = $datass[$arrayLogLen - 1][6];
 
                     $addressName = null;
 
-                    if (count($currentAdaressData) > 0) {
+                    if (count($currentAddressData) > 0) {
 
                         $addressName = fetchFullAddressName(
 
-                            $currentAdaressData[0],
+                            $currentAddressData[0],
 
-                            $currentAdaressData[1]
+                            $currentAddressData[1]
 
                         );
                     }
 
-                    if ($datass[$arraylen - 1][5] != $currentHI) {
+                    if ($datass[$arrayLogLen - 1][5] != $currentHI) {
 
                         $currentDuration = $currentTime->diffInSeconds(
                             $startLogTimeStart
@@ -11317,9 +11360,9 @@ function hos_date_data($id, $startTime, $endTime)
                             "Off duty", // Status
                             $datass[$arraylen - 1][2], // Same null value
                             $datass[$arraylen - 1][3], // Same location
-                            $datass[$arraylen - 1][4], // Start time of the new log
+                            $datass[$arraylen - 1][5], // Start time of the new log
                             $currentHI, // End time of the new log
-                            [], // Same GPS coordinates
+                            $datass[$arraylen - 1][6], // Same GPS coordinates
                             $datass[$arraylen - 1][7], // Same distance
                             $datass[$arraylen - 1][8],
                             $datass[$arraylen - 1][9],
@@ -11327,7 +11370,7 @@ function hos_date_data($id, $startTime, $endTime)
                     }
                 } else {
 
-                    if ($datass[$arraylen - 1][5] != "12:59 PM") {
+                    if ($datass[$arrayLogLen - 1][5] != "12:59 PM") {
                         $start = Carbon::parse($start);
                         $end = Carbon::parse($end);
                         $lastTimeData = Carbon::parse($lastTimeData);
@@ -11353,6 +11396,8 @@ function hos_date_data($id, $startTime, $endTime)
                         }
                     }
                 }
+
+
             } else {
 
                 $datass = $startDataArr;
@@ -13250,7 +13295,7 @@ function vehicle_distance_odometer_data($startTime, $endTime, $vehicleAssign)
 
         foreach ($vehicleAssign as $data) {
 
-            $serialNumber = $data->device->serial_number;
+            $serialNumber = $data->device->serial_number ?? null;
 
             // Retrieve logs within the time range
             $vehicleLogs = VehicleLogHistory::where("identifier", $serialNumber)
@@ -13326,7 +13371,7 @@ function malfunction_vehicle_check_data($vid, $date)
 
     foreach ($vehicle as $val) {
 
-        $serialNumber = $val["devices"][0]["serial_number"];
+        $serialNumber = $val['devices'][0]['serial_number'] ?? null;
 
         $malFunExist = VehicleLogHistory::where("identifier", $serialNumber)
             ->whereBetween("event_date_time", [$startDay, $endDay])

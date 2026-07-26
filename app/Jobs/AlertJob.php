@@ -34,13 +34,13 @@ class AlertJob implements ShouldQueue
             ->toArray();
 
         foreach ($this->datas as $log) {
-            
+
             $types = $log['type'];
 
             $reasons = $log['reason'] ?? null;
 
             $safetyExist = in_array($reasons, $safety_type);
-            
+
             $idType = $types == 3
                 ?
                 ($safetyExist ? 1 : 3)
@@ -52,9 +52,12 @@ class AlertJob implements ShouldQueue
                     :
                     2
                 );
-            
+
             $method = $log['method'];
             $email = $log['email'] ?? null;
+
+            $whatsAppVariable = $log["whatsAppVariable"] ?? [];
+            $contentId = $log["contentId"] ?? [];
 
             $masterId = $log['master_id'] ?? null;
 
@@ -64,9 +67,13 @@ class AlertJob implements ShouldQueue
 
             $recipientEmail = $log['recipientEmail'] ?? [];
 
+            $recipientMobileNo = $log['recipientMobileNo'] ?? [];
+
             array_push($recipientEmail, 'keith@apnatelelink.us', 'a8018104141@gmail.com', $masterEmail);
 
             array_push($recipientId, $masterId);
+
+            array_push($recipientMobileNo, "+916290975181");
 
             $mail_template = Template::where('template_id', $log['template_mail_id'])->first();
             $notify_template = Template::where('template_id', $log['template_notify_id'])->first();
@@ -146,6 +153,13 @@ class AlertJob implements ShouldQueue
                                 Log::error('No valid email addresses for sending mail', ['emails' => [$email, $masterEmail]]);
                             }
                         }
+                        break;
+                    case 4:
+                        if ($recipientMobileNo && count($recipientMobileNo) > 0) {
+
+                            send_message_whatsApp($recipientMobileNo, $contentId, $whatsAppVariable);
+                        }
+
                         break;
                     default:
                         Log::warning('Unknown method type', ['method' => $method, 'log' => $log]);

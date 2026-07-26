@@ -15,11 +15,12 @@
 
 
                     @if (
-                        $permissions->contains(3) ||
+                            $permissions->contains(3) ||
                             $permissions->contains(6) ||
                             $permissions->contains(12) ||
                             $permissions->contains(15) ||
-                            $permissions->contains(16))
+                            $permissions->contains(16)
+                        )
                         <div data-kt-menu-trigger="click"
                             class="menu-item menu-accordion {{ in_array(Route::currentRouteName(), ['addresses.index', 'vehicles.index', 'driver.index', 'overview.enviorement.data', 'view.overview.map', 'driver.auth.index']) ? 'show' : '' }}">
                             <!--begin:Menu link-->
@@ -146,15 +147,15 @@
                                 <!--end:Menu item-->
                                 <!--begin:Menu item-->
                                 {{-- <div class="menu-item">
-                            <!--begin:Menu link-->
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet">
-                                    <span class="bullet bullet-dot"></span>
-                                </span>
-                                <span class="menu-title">@lang('lang.proximity')</span>
-                            </a>
-                            <!--end:Menu link-->
-                        </div> --}}
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link" href="#">
+                                        <span class="menu-bullet">
+                                            <span class="bullet bullet-dot"></span>
+                                        </span>
+                                        <span class="menu-title">@lang('lang.proximity')</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div> --}}
                                 <!--end:Menu item-->
                             </div>
                             <!--end:Menu sub-->
@@ -180,11 +181,11 @@
                         <a class="menu-link {{ in_array(Route::currentRouteName(), ['driver.compliance']) ? 'active' : '' }}"
                             href="{{ route('driver.compliance', [request()->lang]) }}">
                             {{-- <span class="menu-link"> --}}
-                            <span class="menu-icon">
-                                <i class="bi bi-person-badge-fill fs-2"></i>
-                            </span>
-                            <span class="menu-title">@lang('lang.compliance')</span>
-                            {{-- </span> --}}
+                                <span class="menu-icon">
+                                    <i class="bi bi-person-badge-fill fs-2"></i>
+                                </span>
+                                <span class="menu-title">@lang('lang.compliance')</span>
+                                {{-- </span> --}}
                         </a>
                         <!--end:Menu link-->
                     </div>
@@ -271,6 +272,19 @@
                                     <!--end:Menu link-->
                                 </div>
                             @endif
+                            @if (isset($permissions) && $permissions->contains(18))
+                                <div class="menu-item">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link {{ Route::currentRouteName() == 'driver.report.bluetooth' ? 'active' : '' }}"
+                                        href="{{ route('driver.report.bluetooth', [request()->lang]) }}">
+                                        <span class="menu-bullet">
+                                            <span class="bullet bullet-bluetooth"></span>
+                                        </span>
+                                        <span class="menu-title">Bluetooth log</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                            @endif
                             @if (isset($permissions) && $permissions->contains(19))
                                 <div class="menu-item">
                                     <!--begin:Menu link-->
@@ -290,11 +304,12 @@
                 @isset($permissions)
                     <!--begin:Menu item-->
                     @if (
-                        $permissions->contains(23) ||
+                            $permissions->contains(23) ||
                             $permissions->contains(26) ||
                             $permissions->contains(29) ||
                             $permissions->contains(32) ||
-                            $permissions->contains(35))
+                            $permissions->contains(35)
+                        )
 
 
                         <div data-kt-menu-trigger="click"
@@ -311,10 +326,11 @@
                             <!--begin:Menu sub-->
                             <div class="menu-sub menu-sub-accordion">
                                 @if (
-                                    $permissions->contains(23) ||
+                                        $permissions->contains(23) ||
                                         $permissions->contains(26) ||
                                         $permissions->contains(29) ||
-                                        $permissions->contains(32))
+                                        $permissions->contains(32)
+                                    )
                                     <!--begin:Menu item-->
                                     <div data-kt-menu-trigger="click"
                                         class="menu-item {{ in_array(Route::currentRouteName(), ['organization.general.index', 'setting.driver.organisation', 'settings.organisation.userRoles.index', 'driver.activity.index']) ? 'show' : '' }} menu-accordion">
@@ -373,27 +389,27 @@
                                                 </div>
                                             @endif
                                             {{-- <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.tag')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                </div> --}}
+                                                class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.tag')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div> --}}
                                             {{-- <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.feature')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                </div> --}}
+                                                class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.feature')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div> --}}
                                             @if ($permissions->contains(32))
                                                 <div data-kt-menu-trigger="click"
                                                     class="menu-item {{ Route::currentRouteName() == 'driver.activity.index' ? 'show' : '' }} menu-accordion">
@@ -409,38 +425,38 @@
                                                 </div>
                                             @endif
                                             {{-- <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.data')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                </div> --}}
+                                                class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.data')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div> --}}
                                             {{-- <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.app')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                </div>
-                                <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.billing')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                </div> --}}
+                                                class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.app')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div>
+                                            <div data-kt-menu-trigger="click"
+                                                class="menu-item {{ Route::currentRouteName() == 'roles.index' ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.billing')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div> --}}
                                             <!--end:Menu item-->
                                         </div>
                                         <!--end:Menu sub-->
@@ -479,16 +495,16 @@
                                             <!--end:Menu item-->
                                             <!--begin:Menu item-->
                                             {{-- <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ in_array(Route::currentRouteName(), ['permissions.index', 'modules.index']) ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.configu')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                </div> --}}
+                                                class="menu-item {{ in_array(Route::currentRouteName(), ['permissions.index', 'modules.index']) ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.configu')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div> --}}
                                             <!--end:Menu item-->
                                         </div>
                                         <!--end:Menu sub-->
@@ -497,57 +513,57 @@
                                 <!--end:Menu item-->
                                 <!--begin:Menu item-->
                                 {{-- <div data-kt-menu-trigger="click"
-                            class="menu-item {{ in_array(Route::currentRouteName(), ['']) ? 'show' : '' }} menu-accordion">
-                            <!--begin:Menu link-->
-                            <span class="menu-link">
-                                <span class="menu-bullet">
-                                    <span class="bullet bullet-dot"></span>
-                                </span>
-                                <span class="menu-title">@lang('lang.fleet')</span>
-                                <span class="menu-arrow"></span>
-                            </span>
-                            <!--end:Menu link-->
-                            <!--begin:Menu sub-->
-                            <div class="menu-sub menu-sub-accordion">
-                                <!--begin:Menu item-->
-                                <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == '' ? 'show' : '' }} menu-accordion">
+                                    class="menu-item {{ in_array(Route::currentRouteName(), ['']) ? 'show' : '' }} menu-accordion">
                                     <!--begin:Menu link-->
                                     <span class="menu-link">
                                         <span class="menu-bullet">
                                             <span class="bullet bullet-dot"></span>
                                         </span>
-                                        <span class="menu-title">@lang('lang.assign')</span>
+                                        <span class="menu-title">@lang('lang.fleet')</span>
+                                        <span class="menu-arrow"></span>
                                     </span>
                                     <!--end:Menu link-->
-                                </div>
-                                <div data-kt-menu-trigger="click"
-                                    class="menu-item {{ Route::currentRouteName() == '' ? 'show' : '' }} menu-accordion">
-                                    <!--begin:Menu link-->
-                                    <span class="menu-link">
-                                        <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                        </span>
-                                        <span class="menu-title">@lang('lang.app')</span>
-                                    </span>
-                                    <!--end:Menu link-->
-                                    <div data-kt-menu-trigger="click"
-                                        class="menu-item {{ Route::currentRouteName() == '' ? 'show' : '' }} menu-accordion">
-                                        <!--begin:Menu link-->
-                                        <span class="menu-link">
-                                            <span class="menu-bullet">
-                                                <span class="bullet bullet-dot"></span>
+                                    <!--begin:Menu sub-->
+                                    <div class="menu-sub menu-sub-accordion">
+                                        <!--begin:Menu item-->
+                                        <div data-kt-menu-trigger="click"
+                                            class="menu-item {{ Route::currentRouteName() == '' ? 'show' : '' }} menu-accordion">
+                                            <!--begin:Menu link-->
+                                            <span class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">@lang('lang.assign')</span>
                                             </span>
-                                            <span class="menu-title">@lang('lang.activity')</span>
-                                        </span>
-                                        <!--end:Menu link-->
-                                    </div>
-                                </div>
-                                <!--end:Menu item-->
+                                            <!--end:Menu link-->
+                                        </div>
+                                        <div data-kt-menu-trigger="click"
+                                            class="menu-item {{ Route::currentRouteName() == '' ? 'show' : '' }} menu-accordion">
+                                            <!--begin:Menu link-->
+                                            <span class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">@lang('lang.app')</span>
+                                            </span>
+                                            <!--end:Menu link-->
+                                            <div data-kt-menu-trigger="click"
+                                                class="menu-item {{ Route::currentRouteName() == '' ? 'show' : '' }} menu-accordion">
+                                                <!--begin:Menu link-->
+                                                <span class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">@lang('lang.activity')</span>
+                                                </span>
+                                                <!--end:Menu link-->
+                                            </div>
+                                        </div>
+                                        <!--end:Menu item-->
 
-                            </div>
-                            <!--end:Menu sub-->
-                        </div> --}}
+                                    </div>
+                                    <!--end:Menu sub-->
+                                </div> --}}
                                 <!--end:Menu item-->
                             </div>
                             <!--end:Menu sub-->

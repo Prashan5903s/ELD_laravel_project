@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -8,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use Twilio\Rest\Client;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -28,24 +28,6 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
-
-        $client = new Client(
-            env('TWILIO_SID'),
-            env('TWILIO_AUTH_TOKEN')
-        );
-
-        $message = $client->messages->create(
-            'whatsapp:+919026734065',
-            [
-                'from' => env('TWILIO_WHATSAPP_NUMBER'),
-                'body' => 'Test WhatsApp message from Laravel',
-            ]
-        );
-
-        return response()->json([
-            'success' => true,
-            'sid'     => $message->sid,
-        ]);
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }

@@ -18,17 +18,6 @@ class AuthAPI
     public function handle(Request $request, Closure $next)
     {
 
-        $check = Auth::guard('api')->check();
-
-        if (!$check) {
-
-            return response()->json([
-                "status" => "failure",
-                "statusCode" => 401,
-                "message" => "User not loggedIn"
-            ]);
-        }
-
         return $next($request);
     }
 }

@@ -23,7 +23,7 @@ class Handler extends ExceptionHandler
      * @var array<int, class-string<\Throwable>>
      */
     protected $dontReport = [
-        //
+        \League\OAuth2\Server\Exception\OAuthServerException::class,
     ];
 
     /**
@@ -45,7 +45,10 @@ class Handler extends ExceptionHandler
     public function register()
     {
         $this->reportable(function (Throwable $e) {
-            //
+            $this->reportable(function (\League\OAuth2\Server\Exception\OAuthServerException $e) {
+                if ($e->getCode() == 9)
+                    return false;
+            });
         });
     }
 

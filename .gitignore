@@ -1,4 +1,6 @@
-node_modules
-.env
-storage
 vendor
+.env
+.htaccess
+storage
+node_modules
+

@@ -33,6 +33,8 @@ use Illuminate\Validation\Rules\Password;
 use App\Events\ForceLogoutEvent;
 use Illuminate\Support\Facades\Log;
 
+
+
 class UserApiController extends Controller
 {
     public function add(Request $request)
@@ -54,23 +56,28 @@ class UserApiController extends Controller
             'password' => ['required'],
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $user = User::where('email', $request->email)->first();
 
-        if (!Auth::attempt($credentials)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'error' => 'Invalid credentials',
             ], 401);
         }
 
-        $user = Auth::user();
         $userInfo = UserInfo::where('user_id', $user->id)->first();
 
         $userType = $user->user_type;
         $master = User::find($user->master_id);
         $masterUserType = $master?->user_type;
 
-        if (!($userType === "EC" || $userType === "TR" || ($userType === "U" && $masterUserType === "TR"))) {
+        if (
+            !(
+                $userType === "EC" ||
+                $userType === "TR" ||
+                ($userType === "U" && $masterUserType === "TR")
+            )
+        ) {
             return response()->json([
                 'success' => false,
                 'error' => 'Wrong credential',
@@ -92,58 +99,76 @@ class UserApiController extends Controller
         if ($userType == "U") {
 
             if ($activeSession) {
+
                 if ($request->input('force') == "1") {
+
                     $oldToken = $activeSession->user_token;
 
-                    // Mark old session as closed
+                    // Mark old session as logged out
                     $activeSession->update([
                         'log_status' => 'o',
                         'logout_time' => $currTime,
                     ]);
 
-                    // Broadcast logout event to old session
+                    // Broadcast force logout event
                     try {
                         if ($oldToken) {
-                            broadcast(new ForceLogoutEvent($user->id, $oldToken));
+                            broadcast(new ForceLogoutEvent(
+                                $user->id,
+                                $oldToken
+                            ));
                         }
                     } catch (\Throwable $e) {
-                        // Avoid HTML error response from broadcasting failures
-                        Log::error("Broadcast failed: " . $e->getMessage());
+                        Log::error(
+                            'Broadcast failed: ' . $e->getMessage()
+                        );
                     }
 
+                    // Revoke all previous tokens
                     try {
-
                         $user->tokens()->delete();
                     } catch (\Throwable $e) {
-                        Log::error("Token revoke failed: " . $e->getMessage());
+                        Log::error(
+                            'Token revoke failed: ' . $e->getMessage()
+                        );
                     }
+
                 } else {
+
                     return response()->json([
                         'success' => false,
                         'status' => 401,
-                        'error' => "You are already logged in on another device."
+                        'error' => 'You are already logged in on another device.'
                     ], 401);
-                }
-            } else {
-                // Safety: clear any stale tokens
-                $user->tokens()->delete();
-            }
 
+                }
+
+            } else {
+
+                // Cleanup stale tokens
+                try {
+                    $user->tokens()->delete();
+                } catch (\Throwable $e) {
+                    Log::error(
+                        'Token cleanup failed: ' . $e->getMessage()
+                    );
+                }
+            }
         }
 
-        // Generate new token
-        $tokenResult = $user->createToken("Auth_token");
+        // Generate Passport token
+        $tokenResult = $user->createToken('Auth_token');
 
         $tokenString = $tokenResult->accessToken;
         $tokenId = $tokenResult->token->id;
 
-        // Create new log session
+        // Create login session record
         $logSession = LogSession::create([
             'log_status' => 'i',
             'login_time' => $currTime,
             'ip' => $request->ip(),
-            'user_token' => $tokenString,  // plain string for frontend
-            'token_id' => $tokenId,      // store token id for backend mgmt
+            'user_token' => $tokenString,
+            'token_id' => $tokenId,
             'user_agent' => $request->userAgent(),
             'user_id' => $user->id,
         ]);
