@@ -105,8 +105,8 @@ class BluetoothAPIController extends Controller
             //websocket change duty status
 
             BluetoothLogData::create([
-                "driver" => $driver,
-                "vehicle" => $vehicle,
+                "driver_id" => $driverId,
+                "vehicle_id" => $vehicleId,
                 "log_data" => json_encode($request->all()),
                 "request_json" => json_encode($request->request_json),
                 "ip" => $request->ip(),
@@ -117,8 +117,8 @@ class BluetoothAPIController extends Controller
 
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                 'sendType' => 'change-duty-status',
-                'driverId' => $driverId,
-                'vehicleId' => $vehicleId,
+                'driver' => $driver,
+                'vehicle' => $vehicle,
                 'shiftStatus' => $currentShift,
                 'startLogTime' => $startLogTime->toISOString(),
                 'endLogTime' => $endLogTime->toISOString(),
