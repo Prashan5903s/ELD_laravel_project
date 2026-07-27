@@ -138,7 +138,7 @@ class BluetoothAPIController extends Controller
                 'driverId' => $driverId,
                 'driver' => $driver,
                 'vehicle' => $vehicle,
-                'duaration' => $duration,
+                'duration' => $duration,
                 'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
                 'startLogTime' => $startLogTime->toISOString(),
                 'endLogTime' => $endLogTime->toISOString(),
