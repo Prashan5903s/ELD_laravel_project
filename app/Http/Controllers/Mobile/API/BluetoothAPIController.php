@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\BluetoothLogData;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Http;
 
 class BluetoothAPIController extends Controller
 {
@@ -101,9 +102,11 @@ class BluetoothAPIController extends Controller
                 "cycle_start" => $cycleStart,
             ]);
 
+            //websocket change duty status
+
             BluetoothLogData::create([
-                "driver_id" => $driverId,
-                "vehicle_id" => $vehicleId,
+                "driver" => $driver,
+                "vehicle" => $vehicle,
                 "log_data" => json_encode($request->all()),
                 "request_json" => json_encode($request->request_json),
                 "ip" => $request->ip(),
@@ -111,6 +114,18 @@ class BluetoothAPIController extends Controller
             ]);
 
             DB::commit();
+
+            Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
+                'sendType' => 'change-duty-status',
+                'driverId' => $driverId,
+                'vehicleId' => $vehicleId,
+                'shiftStatus' => $currentShift,
+                'startLogTime' => $startLogTime->toISOString(),
+                'endLogTime' => $endLogTime->toISOString(),
+                'locationName' => $locationName,
+                'odometer' => $request->odometer,
+                'engineHours' => $request->engineHours,
+            ]);
 
             return response()->json(
                 [
