@@ -120,6 +120,8 @@ class BluetoothAPIController extends Controller
 
             DB::commit();
 
+            //This is the API for the change duty status
+
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                 'sendType' => 'change-duty-status',
                 'driverId' => $driverId,
