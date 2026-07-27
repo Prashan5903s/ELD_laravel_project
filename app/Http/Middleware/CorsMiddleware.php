@@ -12,7 +12,7 @@ class CorsMiddleware
         $origin = $request->header('Origin');
 
         $allowedOrigins = [
-            'https//uat.apnatelelink.us'
+            'https://uat-eld.vercel.app'
         ];
 
         if ($request->isMethod('OPTIONS')) {
