@@ -68,8 +68,13 @@ class BluetoothAPIController extends Controller
 
             bluetooth_log_add($driverId, $startLogTime, $endLogTime, $currentTime);
 
-            $currentShift = $request->speed >= 5 ? 3 : 1;
             $locationName = fetchFullAddressName($request->latitude, $request->longitude);
+            $currentShift = $request->speed >= 5 ? 3 : 1;
+
+            $currentShiftName = [
+                1 => "Off Duty",
+                3 => "Driving"
+            ];
 
             $logCreate = DriverShiftLog::create([
                 "driver_id" => $driverId,
@@ -115,14 +120,12 @@ class BluetoothAPIController extends Controller
 
             DB::commit();
 
-
-            
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                 'sendType' => 'change-duty-status',
                 'driverId' => $driverId,
                 'driver' => $driver,
                 'vehicle' => $vehicle,
-                'shiftStatus' => $currentShift,
+                'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
                 'startLogTime' => $startLogTime->toISOString(),
                 'endLogTime' => $endLogTime->toISOString(),
                 'locationName' => $locationName,

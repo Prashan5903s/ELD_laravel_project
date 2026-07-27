@@ -12,7 +12,7 @@ class CorsMiddleware
         $origin = $request->header('Origin');
 
         $allowedOrigins = [
-            'http://localhost:3000'
+            'https://uat.apnatelelink.us'
         ];
 
         if ($request->isMethod('OPTIONS')) {

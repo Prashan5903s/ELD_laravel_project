@@ -1,0 +1,3 @@
+[10-Sep-2024 07:26:28 UTC] PHP Parse error:  syntax error, unexpected token "<", expecting end of file in /home/apna607/public_html/uat.apnatelelink.us/app/Console/Kernel.php on line 50
+[15-Nov-2024 14:25:56 UTC] PHP Fatal error:  Cannot use empty array elements in arrays in /home/apna607/public_html/uat.apnatelelink.us/routes/mobileAPI.php on line 11
+[22-Aug-2025 09:49:14 UTC] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.31. in /home/apna607/public_html/uat.apnatelelink.us/vendor/composer/platform_check.php on line 24
