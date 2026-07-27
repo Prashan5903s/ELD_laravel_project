@@ -38,7 +38,9 @@ class BluetoothAPIController extends Controller
 
             DB::beginTransaction();
 
-            $vehicle = Vehicle::where("vin", $request->vin)->first();
+            $vehicle = Vehicle::where('vin', $request->vin)
+                ->select('id', 'name')
+                ->first();
 
             if (!$vehicle) {
 
@@ -133,10 +135,11 @@ class BluetoothAPIController extends Controller
 
             //This is the API for the change duty status
 
+            $timeData = driver_log_time($driverId, $currentTime);
+
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                 'sendType' => 'change-duty-status',
                 'driverId' => $driverId,
-                'driver' => $driver,
                 'vehicle' => $vehicle,
                 'duration' => $duration,
                 'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
@@ -144,6 +147,10 @@ class BluetoothAPIController extends Controller
                 'endLogTime' => $endLogTime->toISOString(),
                 'locationName' => $locationName,
                 'odometer' => $request->odometer,
+                'shift_time' => $timeData[4] ?? '00:00:00',
+                'cycle_time' => $timeData[6] ?? '00:00:00',
+                'break_time' => $timeData[8] ?? '00:00:00',
+                'drive_left' => $timeData[7] ?? '00:00:00',
                 'engineHours' => $request->engineHours,
             ]);
 
