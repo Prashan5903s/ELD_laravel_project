@@ -150,7 +150,7 @@ class BluetoothAPIController extends Controller
                 'shift_time' => $timeData[4] ?? '00:00:00',
                 'cycle_time' => $timeData[6] ?? '00:00:00',
                 'break_time' => $timeData[8] ?? '00:00:00',
-                'drive_left' => $timeData[7] ?? '00:00:00',
+                'drive_time' => $timeData[7] ?? '00:00:00',
                 'engineHours' => $request->engineHours,
             ]);
 
