@@ -117,6 +117,7 @@ class BluetoothAPIController extends Controller
 
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                 'sendType' => 'change-duty-status',
+                'driverId' => $driverId,
                 'driver' => $driver,
                 'vehicle' => $vehicle,
                 'shiftStatus' => $currentShift,
