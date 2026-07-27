@@ -120,6 +120,11 @@ class BluetoothAPIController extends Controller
 
             DB::commit();
 
+            $startLogTime = Carbon::parse($startLogTime);
+            $endLogTime = Carbon::parse($endLogTime);
+
+            $duration = $startLogTime->diff($endLogTime)->format('%H:%I:%S');
+
             //This is the API for the change duty status
 
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
@@ -130,6 +135,7 @@ class BluetoothAPIController extends Controller
                 'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
                 'startLogTime' => $startLogTime->toISOString(),
                 'endLogTime' => $endLogTime->toISOString(),
+                'duaration' => $duration,
                 'locationName' => $locationName,
                 'odometer' => $request->odometer,
                 'engineHours' => $request->engineHours,
