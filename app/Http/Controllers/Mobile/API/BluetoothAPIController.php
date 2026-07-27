@@ -123,7 +123,13 @@ class BluetoothAPIController extends Controller
             $startLogTime = Carbon::parse($startLogTime);
             $endLogTime = Carbon::parse($endLogTime);
 
-            $duration = $startLogTime->diff($endLogTime)->format('%H:%I:%S');
+            $durationInSeconds = $endLogTime->diffInSeconds($startLogTime);
+
+            $hours = floor($durationInSeconds / 3600);
+            $minutes = floor(($durationInSeconds % 3600) / 60);
+            $seconds = $durationInSeconds % 60;
+
+            $duration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
 
             //This is the API for the change duty status
 
@@ -132,10 +138,10 @@ class BluetoothAPIController extends Controller
                 'driverId' => $driverId,
                 'driver' => $driver,
                 'vehicle' => $vehicle,
+                'duaration' => $duration,
                 'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
                 'startLogTime' => $startLogTime->toISOString(),
                 'endLogTime' => $endLogTime->toISOString(),
-                'duaration' => $duration,
                 'locationName' => $locationName,
                 'odometer' => $request->odometer,
                 'engineHours' => $request->engineHours,
