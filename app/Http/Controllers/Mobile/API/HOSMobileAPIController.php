@@ -546,10 +546,19 @@ class HOSMobileAPIController extends Controller
                         'cycle_start' => $cycle_start,
                     ]);
 
+                    $vehicleData = Vehicle::where('id', $vehicleId)->select('id', 'name')->first();
+
                     return response()->json([
                         'status' => "success",
                         'statusCode' => 200,
-                        'message' => 'Saved successfully'
+                        'message' => 'Saved successfully',
+                        'data' => [
+                            'location' => $locationName,
+                            'vehicle' => $vehicleData,
+                            'start_tme' => $currentTime,
+                            'end_time' => null,
+                            'shift_id' => $id
+                        ]
                     ], 200);
                 } else {
 
