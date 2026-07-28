@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\BluetoothLogData;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Http;
 
 class BluetoothAPIController extends Controller
 {
@@ -37,7 +38,9 @@ class BluetoothAPIController extends Controller
 
             DB::beginTransaction();
 
-            $vehicle = Vehicle::where("vin", $request->vin)->first();
+            $vehicle = Vehicle::where('vin', $request->vin)
+                ->select('id', 'name')
+                ->first();
 
             if (!$vehicle) {
 
@@ -67,8 +70,13 @@ class BluetoothAPIController extends Controller
 
             bluetooth_log_add($driverId, $startLogTime, $endLogTime, $currentTime);
 
-            $currentShift = $request->speed >= 5 ? 3 : 1;
             $locationName = fetchFullAddressName($request->latitude, $request->longitude);
+            $currentShift = $request->speed >= 5 ? 3 : 1;
+
+            $currentShiftName = [
+                1 => "Off Duty",
+                3 => "Driving"
+            ];
 
             $logCreate = DriverShiftLog::create([
                 "driver_id" => $driverId,
@@ -101,6 +109,8 @@ class BluetoothAPIController extends Controller
                 "cycle_start" => $cycleStart,
             ]);
 
+            //websocket change duty status
+
             BluetoothLogData::create([
                 "driver_id" => $driverId,
                 "vehicle_id" => $vehicleId,
@@ -111,6 +121,38 @@ class BluetoothAPIController extends Controller
             ]);
 
             DB::commit();
+
+            $startLogTime = Carbon::parse($startLogTime);
+            $endLogTime = Carbon::parse($endLogTime);
+
+            $durationInSeconds = $endLogTime->diffInSeconds($startLogTime);
+
+            $hours = floor($durationInSeconds / 3600);
+            $minutes = floor(($durationInSeconds % 3600) / 60);
+            $seconds = $durationInSeconds % 60;
+
+            $duration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+            //This is the API for the change duty status
+
+            $timeData = driver_log_time($driverId, $currentTime);
+
+            Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
+                'sendType' => 'change-duty-status',
+                'driverId' => $driverId,
+                'vehicle' => $vehicle,
+                'duration' => $duration,
+                'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
+                'startLogTime' => $startLogTime->toISOString(),
+                'endLogTime' => $endLogTime->toISOString(),
+                'locationName' => $locationName,
+                'odometer' => $request->odometer,
+                'shift_time' => $timeData[4] ?? '00:00:00',
+                'cycle_time' => $timeData[6] ?? '00:00:00',
+                'break_time' => $timeData[8] ?? '00:00:00',
+                'drive_time' => $timeData[7] ?? '00:00:00',
+                'engineHours' => $request->engineHours,
+            ]);
 
             return response()->json(
                 [
