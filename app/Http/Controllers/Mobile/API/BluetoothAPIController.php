@@ -73,11 +73,6 @@ class BluetoothAPIController extends Controller
             $locationName = fetchFullAddressName($request->latitude, $request->longitude);
             $currentShift = $request->speed >= 5 ? 3 : 1;
 
-            $currentShiftName = [
-                1 => "Off Duty",
-                3 => "Driving"
-            ];
-
             $logCreate = DriverShiftLog::create([
                 "driver_id" => $driverId,
                 "vehicle_id" => $vehicleId,
@@ -142,7 +137,7 @@ class BluetoothAPIController extends Controller
                 'driverId' => $driverId,
                 'vehicle' => $vehicle,
                 'duration' => $duration,
-                'shiftStatus' => $currentShiftName[$currentShift] ?? "Off Duty",
+                'shiftStatus' => $currentShift ?? 1,
                 'startLogTime' => $startLogTime->toISOString(),
                 'endLogTime' => $endLogTime->toISOString(),
                 'locationName' => $locationName,

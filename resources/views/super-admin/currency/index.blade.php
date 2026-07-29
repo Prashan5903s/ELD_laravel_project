@@ -85,7 +85,7 @@
                                         <div class="card-toolbar">
                                             <!--begin::Button-->
                                             <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_currency">
-                                            <i class="ki-outline ki-plus-square fs-3"></i>Add Currency</button>
+                                            <i class="ki-outline ki-plus-square fs-3"></i>Add Blog</button>
                                             <!--end::Button-->
                                         </div>
                                         <!--end::Card toolbar-->
