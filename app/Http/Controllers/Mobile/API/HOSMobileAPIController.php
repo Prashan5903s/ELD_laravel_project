@@ -2,16 +2,16 @@
 namespace App\Http\Controllers\Mobile\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\BluetoothLogData;
 use App\Models\Device;
 use App\Models\DriverShiftLog;
 use App\Models\RuleAssign;
 use App\Models\User;
 use App\Models\UserInfo;
-use Carbon\Carbon;
-use App\Models\VehicleAssign;
 use App\Models\Vehicle;
+use App\Models\VehicleAssign;
 use App\Models\VehicleLogHistory;
-use App\Models\BluetoothLogData;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -26,7 +26,7 @@ class HOSMobileAPIController extends Controller
         $cycle_start = 0;
         $shift_start = 0;
 
-        $key = config('app.Map_key');  // Fetch the Google Maps API key
+        $key = config('app.Map_key'); // Fetch the Google Maps API key
 
         // Check if the user is authenticated
         if (Auth::check()) {
@@ -50,9 +50,9 @@ class HOSMobileAPIController extends Controller
                 if ($validator->fails()) {
 
                     return response()->json([
-                        'status' => 'failure',
+                        'status'     => 'failure',
                         'statusCode' => 422,
-                        'message' => $validator->errors()->first('message_reason')
+                        'message'    => $validator->errors()->first('message_reason'),
                     ], 422);
                 }
 
@@ -82,27 +82,27 @@ class HOSMobileAPIController extends Controller
 
                     $odometer = get_driver_activity_odometer($device, $currentTime);
 
-                    if (!is_null($latestEndLogTime)) {
+                    if (! is_null($latestEndLogTime)) {
 
                         if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
 
                             $updatedBtwLog = DriverShiftLog::create([
-                                'created_at' => $currentTime,
-                                'start_log_time' => $latestEndLogTime,
-                                "end_log_time" => Carbon::parse($currentTime),
-                                'start_log_time_unix' => Carbon::parse($latestEndLogTime)->timestamp,
-                                'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                                'driver_id' => $driverId,
-                                'vehicle_id' => $vehicleId,
-                                'location_name' => $locationName,
-                                'odometer' => $odometer,
-                                'engineHour' => $engineHour,
+                                'created_at'           => $currentTime,
+                                'start_log_time'       => $latestEndLogTime,
+                                "end_log_time"         => Carbon::parse($currentTime),
+                                'start_log_time_unix'  => Carbon::parse($latestEndLogTime)->timestamp,
+                                'end_log_time_unix'    => Carbon::parse($currentTime)->timestamp,
+                                'driver_id'            => $driverId,
+                                'vehicle_id'           => $vehicleId,
+                                'location_name'        => $locationName,
+                                'odometer'             => $odometer,
+                                'engineHour'           => $engineHour,
                                 'current_shift_status' => 1,
-                                'message_reason' => $text,
-                                'is_add_approved' => 1,
-                                'is_edit_approved' => 1,
-                                'is_edit' => 1,
-                                'created_by' => Auth::user()->id,
+                                'message_reason'       => $text,
+                                'is_add_approved'      => 1,
+                                'is_edit_approved'     => 1,
+                                'is_edit'              => 1,
+                                'created_by'           => Auth::user()->id,
                             ]);
 
                             $startBtwData = shift_cycle_start_check($updatedBtwLog, $currentTime, $locationName, $rule_ids, 0);
@@ -124,34 +124,33 @@ class HOSMobileAPIController extends Controller
                     }
 
                     $updatedLatestLog = DriverShiftLog::create([
-                        'created_at' => $currentTime,
-                        'start_log_time' => $currentTime,
-                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                        'driver_id' => $driverId,
-                        'vehicle_id' => $vehicleId,
-                        'location_name' => $locationName,
-                        'odometer' => $odometer,
-                        'engineHour' => $engineHour,
+                        'created_at'           => $currentTime,
+                        'start_log_time'       => $currentTime,
+                        'start_log_time_unix'  => Carbon::parse($currentTime)->timestamp,
+                        'driver_id'            => $driverId,
+                        'vehicle_id'           => $vehicleId,
+                        'location_name'        => $locationName,
+                        'odometer'             => $odometer,
+                        'engineHour'           => $engineHour,
                         'current_shift_status' => $id,
-                        'message_reason' => $text,
-                        'is_add_approved' => 1,
-                        'is_edit_approved' => 1,
-                        'is_edit' => 1,
-                        'created_by' => Auth::user()->id,
+                        'message_reason'       => $text,
+                        'is_add_approved'      => 1,
+                        'is_edit_approved'     => 1,
+                        'is_edit'              => 1,
+                        'created_by'           => Auth::user()->id,
                     ]);
 
                     $latestLogEndTIme = is_null($latestEndLogTime) ? Carbon::parse($currentTime) : Carbon::parse($latestEndLogTime);
 
-                    if (!Carbon::parse($latestLogEndTIme)->ne($currentTime)) {
+                    if (! Carbon::parse($latestLogEndTIme)->ne($currentTime)) {
 
                         $latestLog->update([
-                            'end_log_time' => $currentTime,
+                            'end_log_time'      => $currentTime,
                             'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                            'location_end' => $locationName,
-                            'odometer_end' => $odometer,
-                            'engineHour' => $engineHour
+                            'location_end'      => $locationName,
+                            'odometer_end'      => $odometer,
+                            'engineHour'        => $engineHour,
                         ]);
-
 
                     }
 
@@ -168,9 +167,9 @@ class HOSMobileAPIController extends Controller
                     ]);
 
                     return response()->json([
-                        'status' => "success",
+                        'status'     => "success",
                         'statusCode' => 200,
-                        'message' => 'Saved successfully'
+                        'message'    => 'Saved successfully',
                     ], 200);
                 } else {
 
@@ -203,44 +202,44 @@ class HOSMobileAPIController extends Controller
                     }
 
                     DriverShiftLog::create([
-                        "driver_id" => $driverId,
-                        "vehicle_id" => $vehicleId,
-                        "start_log_time" => $currentTime,
-                        "end_log_time" => null,
-                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                        'end_log_time_unix' => null,
-                        'message_reason' => $text,
+                        "driver_id"            => $driverId,
+                        "vehicle_id"           => $vehicleId,
+                        "start_log_time"       => $currentTime,
+                        "end_log_time"         => null,
+                        'start_log_time_unix'  => Carbon::parse($currentTime)->timestamp,
+                        'end_log_time_unix'    => null,
+                        'message_reason'       => $text,
                         'current_shift_status' => $id,
-                        "is_add_approved" => 1,
-                        'is_edit_approved' => 1,
-                        'is_edit' => 1,
-                        "is_active" => 1,
-                        'shift_start' => 1,
-                        'cycle_start' => 1,
-                        "created_by" => $driverId
+                        "is_add_approved"      => 1,
+                        'is_edit_approved'     => 1,
+                        'is_edit'              => 1,
+                        "is_active"            => 1,
+                        'shift_start'          => 1,
+                        'cycle_start'          => 1,
+                        "created_by"           => $driverId,
                     ]);
 
                     return response()->json([
-                        'status' => "success",
+                        'status'     => "success",
                         'statusCode' => 200,
-                        'message' => 'Saved successfully'
+                        'message'    => 'Saved successfully',
                     ], 200);
 
                 }
             } else {
 
                 return response()->json([
-                    'status' => 'failure',
+                    'status'     => 'failure',
                     'statusCode' => 401,
-                    'message' => "Unauthorized user"
+                    'message'    => "Unauthorized user",
                 ], 401);
             }
         } else {
 
             return response()->json([
-                'status' => 'failure',
+                'status'     => 'failure',
                 'statusCode' => 401,
-                'message' => "Not authenticated"
+                'message'    => "Not authenticated",
             ], 401);
         }
     }
@@ -261,17 +260,17 @@ class HOSMobileAPIController extends Controller
             $datas = hos_date_data($id, $start, $end);
 
             $data = [
-                'status' => 'success',
+                'status'     => 'success',
                 'statusCode' => 200,
-                'message' => 'Data fetched successfully',
-                'log_data' => $datas,
+                'message'    => 'Data fetched successfully',
+                'log_data'   => $datas,
             ];
         } else {
 
             $data = [
-                'status' => 'success',
+                'status'     => 'success',
                 'statusCode' => 401,
-                'message' => 'Not authenticated',
+                'message'    => 'Not authenticated',
             ];
         }
 
@@ -293,17 +292,17 @@ class HOSMobileAPIController extends Controller
             $datas = hos_date_data_test($id, $start, $end);
 
             $data = [
-                'status' => 'success',
+                'status'     => 'success',
                 'statusCode' => 200,
-                'message' => 'Data fetched successfully',
-                'log_data' => $datas,
+                'message'    => 'Data fetched successfully',
+                'log_data'   => $datas,
             ];
         } else {
 
             $data = [
-                'status' => 'success',
+                'status'     => 'success',
                 'statusCode' => 401,
-                'message' => 'Not authenticated',
+                'message'    => 'Not authenticated',
             ];
         }
 
@@ -341,7 +340,7 @@ class HOSMobileAPIController extends Controller
 
                 $distinctVehicle = [];
 
-                if (!empty($finalData['graph_data']) && count($finalData['graph_data']) > 0) {
+                if (! empty($finalData['graph_data']) && count($finalData['graph_data']) > 0) {
 
                     foreach ($finalData['graph_data'] as $veh) {
 
@@ -350,7 +349,7 @@ class HOSMobileAPIController extends Controller
                         // Check if name already exists in the array
                         $exists = collect($distinctVehicle)->contains('name', $name);
 
-                        if (!$exists) {
+                        if (! $exists) {
 
                             $distinctVehicle[] = ['name' => $name];
                         }
@@ -362,25 +361,25 @@ class HOSMobileAPIController extends Controller
                 $finalData['violation_data'] = $datas[2];
 
                 $data = [
-                    'status' => 'success',
+                    'status'     => 'success',
                     'statusCode' => 200,
-                    'message' => 'Data fetched successfully',
-                    'data' => $finalData,
+                    'message'    => 'Data fetched successfully',
+                    'data'       => $finalData,
                 ];
             } else {
 
                 $data = [
-                    'status' => 'failure',
+                    'status'     => 'failure',
                     'statusCode' => 403,
-                    'message' => 'Data does not exist',
+                    'message'    => 'Data does not exist',
                 ];
             }
         } else {
 
             $data = [
-                'status' => 'success',
+                'status'     => 'success',
                 'statusCode' => 401,
-                'message' => 'Not authenticated',
+                'message'    => 'Not authenticated',
             ];
         }
 
@@ -393,7 +392,7 @@ class HOSMobileAPIController extends Controller
         $cycle_start = 0;
         $shift_start = 0;
 
-        $key = config('app.Map_key');  // Fetch the Google Maps API key
+        $key = config('app.Map_key'); // Fetch the Google Maps API key
 
         // Check if the user is authenticated
         if (Auth::check()) {
@@ -402,26 +401,26 @@ class HOSMobileAPIController extends Controller
 
                 $request->validate([
                     'shift_id' => 'required|string|max:255',
-                    'text' => 'required|string',
-                    'lat' => 'required|numeric',
-                    'long' => 'required|numeric',
+                    'text'     => 'required|string',
+                    'lat'      => 'required|numeric',
+                    'long'     => 'required|numeric',
                 ]);
 
             } catch (ValidationException $e) {
 
                 return response()->json([
-                    'status' => 'failure',
+                    'status'     => 'failure',
                     'statusCode' => 422,
-                    'message' => 'Validation failed',
-                    'errors' => $e->errors(),
+                    'message'    => 'Validation failed',
+                    'errors'     => $e->errors(),
                 ], 422);
 
             }
 
-            $id = $request->shift_id;
+            $id   = $request->shift_id;
             $text = $request->text;
             $long = $request->long;
-            $lat = $request->lat;
+            $lat  = $request->lat;
 
             $user = Auth::user();
 
@@ -429,6 +428,8 @@ class HOSMobileAPIController extends Controller
 
             // Find the master user
             $master = User::find($user->master_id);
+
+            $locationName = fetchFullAddressName($lat, $long);
 
             // Check if the user is of type 'U' and their master is of type 'TR'
             if ($user->user_type == 'U' && $master && $master->user_type == 'TR') {
@@ -451,8 +452,6 @@ class HOSMobileAPIController extends Controller
                     $rule_ids = RuleAssign::where('user_id', $driverId)
                         ->pluck('rule_id'); // Get an array of rule_ids from RuleAssign
 
-                    $locationName = fetchFullAddressName($lat, $long);
-
                     $vehicleId = $latestLog->vehicle_id;
 
                     $device = Device::where('vehicle_id', $vehicleId)->first();
@@ -461,27 +460,27 @@ class HOSMobileAPIController extends Controller
 
                     $odometer = get_driver_activity_odometer($device, $currentTime);
 
-                    if (!is_null($latestEndLogTime)) {
+                    if (! is_null($latestEndLogTime)) {
 
                         if (Carbon::parse($latestEndLogTime)->ne($currentTime)) {
 
                             $updatedBtwLog = DriverShiftLog::create([
-                                'created_at' => $currentTime,
-                                'start_log_time' => $latestEndLogTime,
-                                "end_log_time" => Carbon::parse($currentTime),
-                                'start_log_time_unix' => Carbon::parse($latestEndLogTime)->timestamp,
-                                'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                                'driver_id' => $driverId,
-                                'vehicle_id' => $vehicleId,
-                                'location_name' => $locationName,
-                                'odometer' => $odometer,
-                                'engineHour' => $engineHour,
+                                'created_at'           => $currentTime,
+                                'start_log_time'       => $latestEndLogTime,
+                                "end_log_time"         => Carbon::parse($currentTime),
+                                'start_log_time_unix'  => Carbon::parse($latestEndLogTime)->timestamp,
+                                'end_log_time_unix'    => Carbon::parse($currentTime)->timestamp,
+                                'driver_id'            => $driverId,
+                                'vehicle_id'           => $vehicleId,
+                                'location_name'        => $locationName,
+                                'odometer'             => $odometer,
+                                'engineHour'           => $engineHour,
                                 'current_shift_status' => 1,
-                                'message_reason' => $messageReason,
-                                'is_add_approved' => 1,
-                                'is_edit_approved' => 1,
-                                'is_edit' => 1,
-                                'created_by' => Auth::user()->id,
+                                'message_reason'       => $messageReason,
+                                'is_add_approved'      => 1,
+                                'is_edit_approved'     => 1,
+                                'is_edit'              => 1,
+                                'created_by'           => Auth::user()->id,
                             ]);
 
                             $startBtwData = shift_cycle_start_check($updatedBtwLog, $currentTime, $locationName, $rule_ids, 0);
@@ -503,34 +502,33 @@ class HOSMobileAPIController extends Controller
                     }
 
                     $updatedLatestLog = DriverShiftLog::create([
-                        'created_at' => $currentTime,
-                        'start_log_time' => $currentTime,
-                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                        'driver_id' => $driverId,
-                        'vehicle_id' => $vehicleId,
-                        'location_name' => $locationName,
-                        'odometer' => $odometer,
-                        'engineHour' => $engineHour,
+                        'created_at'           => $currentTime,
+                        'start_log_time'       => $currentTime,
+                        'start_log_time_unix'  => Carbon::parse($currentTime)->timestamp,
+                        'driver_id'            => $driverId,
+                        'vehicle_id'           => $vehicleId,
+                        'location_name'        => $locationName,
+                        'odometer'             => $odometer,
+                        'engineHour'           => $engineHour,
                         'current_shift_status' => $id,
-                        'message_reason' => $text,
-                        'is_add_approved' => 1,
-                        'is_edit_approved' => 1,
-                        'is_edit' => 1,
-                        'created_by' => Auth::user()->id,
+                        'message_reason'       => $text,
+                        'is_add_approved'      => 1,
+                        'is_edit_approved'     => 1,
+                        'is_edit'              => 1,
+                        'created_by'           => Auth::user()->id,
                     ]);
 
                     $latestLogEndTIme = is_null($latestEndLogTime) ? Carbon::parse($currentTime) : Carbon::parse($latestEndLogTime);
 
-                    if (!Carbon::parse($latestLogEndTIme)->ne($currentTime)) {
+                    if (! Carbon::parse($latestLogEndTIme)->ne($currentTime)) {
 
                         $latestLog->update([
-                            'end_log_time' => $currentTime,
+                            'end_log_time'      => $currentTime,
                             'end_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                            'location_end' => $locationName,
-                            'odometer_end' => $odometer,
-                            'engineHour' => $engineHour
+                            'location_end'      => $locationName,
+                            'odometer_end'      => $odometer,
+                            'engineHour'        => $engineHour,
                         ]);
-
 
                     }
 
@@ -546,10 +544,19 @@ class HOSMobileAPIController extends Controller
                         'cycle_start' => $cycle_start,
                     ]);
 
+                    $vehicleData = Vehicle::where('id', $vehicleId)->select('id', 'name')->first();
+
                     return response()->json([
-                        'status' => "success",
+                        'status'     => "success",
                         'statusCode' => 200,
-                        'message' => 'Saved successfully'
+                        'message'    => 'Saved successfully',
+                        'data'       => [
+                            'location'  => $locationName,
+                            'vehicle'   => $vehicleData,
+                            'start_tme' => $currentTime,
+                            'end_time'  => null,
+                            'shift_id'  => $id,
+                        ],
                     ], 200);
                 } else {
 
@@ -582,44 +589,53 @@ class HOSMobileAPIController extends Controller
                     }
 
                     DriverShiftLog::create([
-                        "driver_id" => $driverId,
-                        "vehicle_id" => $vehicleId,
-                        "start_log_time" => $currentTime,
-                        "end_log_time" => null,
-                        'start_log_time_unix' => Carbon::parse($currentTime)->timestamp,
-                        'end_log_time_unix' => null,
-                        'message_reason' => $text,
+                        "driver_id"            => $driverId,
+                        "vehicle_id"           => $vehicleId,
+                        "start_log_time"       => $currentTime,
+                        "end_log_time"         => null,
+                        'start_log_time_unix'  => Carbon::parse($currentTime)->timestamp,
+                        'end_log_time_unix'    => null,
+                        'message_reason'       => $text,
                         'current_shift_status' => $id,
-                        "is_add_approved" => 1,
-                        'is_edit_approved' => 1,
-                        'is_edit' => 1,
-                        "is_active" => 1,
-                        'shift_start' => 1,
-                        'cycle_start' => 1,
-                        "created_by" => $driverId
+                        "is_add_approved"      => 1,
+                        'is_edit_approved'     => 1,
+                        'is_edit'              => 1,
+                        "is_active"            => 1,
+                        'shift_start'          => 1,
+                        'cycle_start'          => 1,
+                        "created_by"           => $driverId,
                     ]);
 
+                    $vehicleData = Vehicle::where('id', $vehicleId)->select('id', 'name')->first();
+
                     return response()->json([
-                        'status' => "success",
+                        'status'     => "success",
                         'statusCode' => 200,
-                        'message' => 'Saved successfully'
+                        'message'    => 'Saved successfully',
+                        'data'       => [
+                            'location'  => $locationName,
+                            'vehicle'   => $vehicleData,
+                            'start_tme' => $currentTime,
+                            'end_time'  => null,
+                            'shift_id'  => $id,
+                        ],
                     ], 200);
 
                 }
             } else {
 
                 return response()->json([
-                    'status' => 'failure',
+                    'status'     => 'failure',
                     'statusCode' => 401,
-                    'message' => "Unauthorized user"
+                    'message'    => "Unauthorized user",
                 ], 401);
             }
         } else {
 
             return response()->json([
-                'status' => 'failure',
+                'status'     => 'failure',
                 'statusCode' => 401,
-                'message' => "Not authenticated"
+                'message'    => "Not authenticated",
             ], 401);
         }
     }
@@ -647,8 +663,6 @@ class HOSMobileAPIController extends Controller
 
 // class HOSMobileAPIController extends Controller
 // {
-
-
 
 //     public function hos_mobile_data($start, $end)
 //     {
