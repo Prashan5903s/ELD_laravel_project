@@ -132,6 +132,8 @@ class BluetoothAPIController extends Controller
 
             $timeData = driver_log_time($driverId, $currentTime);
 
+            //This is the api hit of socket
+
             Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                 'sendType' => 'change-duty-status',
                 'driverId' => $driverId,
