@@ -10,8 +10,8 @@ use App\Models\UserInfo;
 use Carbon\Carbon;
 use App\Models\LogSession;
 use Illuminate\Support\Facades\Log;
-use App\Events\ForceLogoutEvent;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Http;
 
 class LoginMobileApiController extends Controller
 {
@@ -70,7 +70,11 @@ class LoginMobileApiController extends Controller
                         try {
                             if ($oldToken) {
 
-                                broadcast(new ForceLogoutEvent($user->id, $oldToken));
+                                Http::post('https://lms.learningink.com/socket/broadcast-force-logout', [
+                                    'sendType' => 'change-duty-status',
+                                    'driverId' => $user->id,
+                                    'token' => $oldToken
+                                ]);
 
                             }
                         } catch (\Throwable $e) {

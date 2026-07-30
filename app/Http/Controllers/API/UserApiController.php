@@ -21,16 +21,13 @@ use App\Models\Language;
 use App\Models\EmailLogs;
 use App\Models\ListOption;
 use App\Models\LogSession;
-use Laravel\Passport\Token;
 use Illuminate\Http\Request;
 use App\Models\VehicleAssign;
 use App\Models\DriverShiftLog;
 use App\Models\VehicleLogHistory;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
-
-use App\Events\ForceLogoutEvent;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 
@@ -113,10 +110,11 @@ class UserApiController extends Controller
                     // Broadcast force logout event
                     try {
                         if ($oldToken) {
-                            broadcast(new ForceLogoutEvent(
-                                $user->id,
-                                $oldToken
-                            ));
+                            Http::post('https://lms.learningink.com/socket/broadcast-force-logout', [
+                                'sendType' => 'change-duty-status',
+                                'driverId' => $user->id,
+                                'token' => $oldToken
+                            ]);
                         }
                     } catch (\Throwable $e) {
                         Log::error(
