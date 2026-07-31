@@ -30,20 +30,14 @@ Route::post('forgot/mobile/password/{email}', [UserMobileAPIController::class, '
 
 Route::post('reset/mobile/password/{email}', [UserMobileAPIController::class, 'store']);
 
-Route::middleware('auth:mobileAPI')->group(function () {
-
-    Route::get('test-auth', function (Request $request) {
-
-        return response()->json([
-            'success' => true,
-            'statusCode' => 200,
-            'message' => 'Access token is valid.',
-            'user_id' => $request->user()->id,
-        ]);
-
-    });
-
-});
+Route::get('test-auth', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'statusCode' => 200,
+        'message' => 'Authenticated',
+        'user_id' => $request->user('mobileAPI')->id,
+    ]);
+})->middleware('auth:mobileAPI');
 
 // Protected routes (requires mobileAPI guard)
 Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
