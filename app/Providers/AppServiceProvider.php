@@ -6,9 +6,10 @@ use Illuminate\Support\Facades\Auth; // Import the Auth facade
 use Illuminate\Support\ServiceProvider;
 use App\Models\Language;
 use App\Models\User;
-use App\Models\UserInfo;
+use Laravel\Passport\Passport;
 use Illuminate\Pagination\Paginator;
 use App\Models\Hardware;
+use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+
+        Passport::tokensExpireIn(
+            Carbon::now()->addDays(7)
+        );
+
+        Passport::refreshTokensExpireIn(
+            Carbon::now()->addDays(30)
+        );
+
+        Passport::personalAccessTokensExpireIn(
+            Carbon::now()->addDays(7)
+        );
+
         Paginator::useBootstrapFive();
 
         $lang = Language::where('is_active', 1)->get();
