@@ -46,7 +46,7 @@ Route::middleware('auth:mobileAPI')->group(function () {
 });
 
 // Protected routes (requires mobileAPI guard)
-Route::middleware(['APILogCheck', 'auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
+Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
 
     Route::get('config/data', [AppConfigAPIController::class, 'app_config_data']);
 
