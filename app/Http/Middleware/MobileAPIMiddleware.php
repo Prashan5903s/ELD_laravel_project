@@ -19,7 +19,7 @@ class MobileAPIMiddleware
             ], 401);
         }
 
-        if ($user->user_type !== 'u') {
+        if ($user->user_type !== 'U') {
             return response()->json([
                 'success' => false,
                 'statusCode' => 403,
