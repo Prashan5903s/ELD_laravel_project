@@ -2,16 +2,14 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
 {
-    protected $levels = [
-        //
-    ];
+    protected $levels = [];
 
     protected $dontReport = [
         \League\OAuth2\Server\Exception\OAuthServerException::class,
