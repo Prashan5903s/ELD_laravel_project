@@ -24,6 +24,9 @@ use App\Http\Controllers\Mobile\API\UserDeviceAPIController;
 
 
 // Public routes
+
+Route::post("/check/user/access/token", [LoginMobileApiController::class, 'checkAccessToken']);
+
 Route::post('user/mobile/login', [LoginMobileAPIController::class, 'mobile_login']);
 
 Route::post('forgot/mobile/password/{email}', [UserMobileAPIController::class, 'index']);

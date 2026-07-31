@@ -9,9 +9,11 @@ use App\Models\User;
 use App\Models\UserInfo;
 use Carbon\Carbon;
 use App\Models\LogSession;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class LoginMobileApiController extends Controller
 {
@@ -169,6 +171,85 @@ class LoginMobileApiController extends Controller
 
         }
 
+    }
+
+    public function checkAccessToken(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'token' => 'required|string',
+            ], [
+                'token.required' => 'Token is required.',
+            ]);
+
+            $token = $request->token;
+
+            // Remove "Bearer " if it is sent with the token
+            $token = preg_replace('/^Bearer\s+/i', '', $token);
+
+            // Passport stores a hash of the access token
+            $tokenId = Str::before($token, '|');
+
+            $accessToken = DB::table('oauth_access_tokens')
+                ->where('id', $tokenId)
+                ->first();
+
+            if (!$accessToken) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 401,
+                    'message' => 'Invalid access token.',
+                ], 401);
+            }
+
+            // Check if token is revoked
+            if ($accessToken->revoked) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 401,
+                    'message' => 'Access token has been revoked.',
+                ], 401);
+            }
+
+            // Check if token is expired
+            if (now()->greaterThan($accessToken->expires_at)) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 401,
+                    'message' => 'Access token has expired.',
+                ], 401);
+            }
+
+            return response()->json([
+                'success' => true,
+                'statusCode' => 200,
+                'message' => 'Access token is valid and active.',
+                'data' => [
+                    'token_id' => $accessToken->id,
+                    'user_id' => $accessToken->user_id,
+                    'expires_at' => $accessToken->expires_at,
+                ],
+            ], 200);
+
+        } catch (ValidationException $e) {
+
+            return response()->json([
+                'success' => false,
+                'statusCode' => 422,
+                'message' => $e->errors(),
+            ], 422);
+
+        } catch (\Throwable $e) {
+
+            Log::error("Check access token failed: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'statusCode' => 500,
+                'message' => 'Something went wrong. Please try again.',
+            ], 500);
+        }
     }
 
     public function logout(Request $request, $log)
