@@ -21,7 +21,7 @@ use App\Http\Controllers\Mobile\API\DOTInspectionMobileAPIController;
 use App\Http\Controllers\Mobile\API\HOSUnsignedLogMobileAPIController;
 use App\Http\Controllers\Mobile\API\InspectionReportMobileAPIController;
 use App\Http\Controllers\Mobile\API\UserDeviceAPIController;
-
+use Illuminate\Http\Request;
 
 // Public routes
 Route::post('user/mobile/login', [LoginMobileAPIController::class, 'mobile_login']);
@@ -29,6 +29,21 @@ Route::post('user/mobile/login', [LoginMobileAPIController::class, 'mobile_login
 Route::post('forgot/mobile/password/{email}', [UserMobileAPIController::class, 'index']);
 
 Route::post('reset/mobile/password/{email}', [UserMobileAPIController::class, 'store']);
+
+Route::middleware('auth:mobileAPI')->group(function () {
+
+    Route::get('test-auth', function (Request $request) {
+
+        return response()->json([
+            'success' => true,
+            'statusCode' => 200,
+            'message' => 'Access token is valid.',
+            'user_id' => $request->user()->id,
+        ]);
+
+    });
+
+});
 
 // Protected routes (requires mobileAPI guard)
 Route::middleware(['APILogCheck', 'auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
