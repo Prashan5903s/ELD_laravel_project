@@ -9,7 +9,7 @@ class Authenticate extends Middleware
 {
     protected function redirectTo($request)
     {
-        if ($request->expectsJson() || $request->is('api/*')) {
+        if ($request->expectsJson() || $request->is('api/*') || $request->is('mobileAPI/*')) {
             return null;
         }
 

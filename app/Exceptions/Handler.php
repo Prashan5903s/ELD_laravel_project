@@ -36,8 +36,11 @@ class Handler extends ExceptionHandler
         $request,
         AuthenticationException $exception
     ) {
-        if ($request->expectsJson() || $request->is('api/*')) {
-
+        if (
+            $request->expectsJson() ||
+            $request->is('api/*') ||
+            $request->is('mobileAPI/*')
+        ) {
             return response()->json([
                 'success' => false,
                 'statusCode' => 401,
