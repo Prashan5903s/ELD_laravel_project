@@ -143,7 +143,7 @@ Route::middleware(['api-acess', 'throttle:300,1'])->group(function () {
             return $request->user();
         });
 
-
+        Route::post('save/image/message', [UserApiController::class, 'save_image_message']);
 
         Route::get('states/{id}', [UserApiController::class, 'getStates']);
 

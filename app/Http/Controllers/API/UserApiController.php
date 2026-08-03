@@ -792,4 +792,37 @@ class UserApiController extends Controller
             'message' => 'Password updated successfully',
         ], 200);
     }
+
+    public static function save_image_message(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate image
+        ]);
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imagePath = public_path('uploads/images/' . $imageName);
+
+            // Create the directory if it doesn't exist
+            if (!file_exists(public_path('uploads/images'))) {
+                mkdir(public_path('uploads/images'), 0755, true);
+            }
+
+            // Save the image to the specified path
+            $image->move(public_path('uploads/images'), $imageName);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Image uploaded successfully',
+                'image_url' => url('uploads/images/' . $imageName),
+            ], 200);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'No image file found in the request',
+            ], 400);
+        }
+    }
+
 }
