@@ -250,7 +250,7 @@ return [
         '12' => '1 Year',
     ],
 
-    'eld_web' => 'http://localhost:3000',
+    'eld_web' => 'https://uat-eld.vercel.app',
 
     'eld_mail' => 'support@uateld.com',
 
