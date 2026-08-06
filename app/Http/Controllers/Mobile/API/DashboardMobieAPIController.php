@@ -84,7 +84,7 @@ class DashboardMobieAPIController extends Controller
                 'userInfo' => $log_data[3],
                 'vehicle' => $log_data[1],
                 'time_in_current_status' => $log_data[2],
-                'latest_log' => $log_data[5],
+                'shift_id' => $log_data[5],
                 'time_left_in_shift' => $log_data[4],
                 'time_left_in_cycle' => $log_data[6],
                 'time_left_in_drive' => $log_data[7],
