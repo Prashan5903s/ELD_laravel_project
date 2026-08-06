@@ -1,66 +1,372 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚛 ELD - Electronic Logging Device System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Overview
 
-## About Laravel
+The ELD (Electronic Logging Device) System is a fleet management platform designed to help transportation companies monitor drivers, vehicles, and compliance with Hours of Service (HOS) regulations. The application provides real-time tracking, messaging, driver activity monitoring, panic alerts, document management, and administrative tools.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+# Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Driver Management
 
-## Learning Laravel
+-   Driver registration and profile management
+-   Driver activity monitoring
+-   Duty status management (Off Duty, Sleeper Berth, Driving, On Duty)
+-   Driver document management
+-   Driver logs and history
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Fleet Management
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+-   Vehicle management
+-   Trailer management
+-   Company management
+-   Terminal management
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### HOS Compliance
 
-## Laravel Sponsors
+-   Electronic Log Book (ELD)
+-   Hours of Service tracking
+-   Violations monitoring
+-   Cycle tracking
+-   Daily log reports
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+### Real-Time Communication
 
-### Premium Partners
+-   Secure WebSocket messaging
+-   One-to-one chat
+-   Group chat
+-   Read receipts
+-   Live unread message count
+-   Force logout support
+-   Live duty status updates
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+### Panic Alert
 
-## Contributing
+-   Emergency panic alerts
+-   Live notification to dispatch
+-   Driver location information
+-   Contact details
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Dashboard
 
-## Code of Conduct
+-   Driver dashboard
+-   Fleet dashboard
+-   Live activity monitoring
+-   Statistics and reports
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### User Roles
 
-## Security Vulnerabilities
+-   Super Admin
+-   Company Admin
+-   Dispatcher
+-   Driver
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+# Technology Stack
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Frontend
+
+-   Next.js
+-   React.js
+-   Material UI (MUI)
+-   Bootstrap Icons
+-   Axios
+-   NextAuth
+
+## Backend
+
+-   Laravel
+-   PHP
+-   REST APIs
+
+## Real-Time Server
+
+-   Node.js
+-   WebSocket (ws)
+
+## Database
+
+-   MySQL
+
+---
+
+# System Architecture
+
+```
+Driver App / Web Portal
+          │
+          ▼
+      Next.js Frontend
+          │
+ REST API │ WebSocket
+          │
+ ┌────────┴────────┐
+ │                 │
+ ▼                 ▼
+Laravel API     Node.js WebSocket Server
+ │                 │
+ └────────┬────────┘
+          ▼
+       MySQL Database
+```
+
+---
+
+# Major Modules
+
+-   Authentication
+-   Dashboard
+-   Driver Management
+-   Fleet Management
+-   HOS Logs
+-   Messaging System
+-   Panic Alert
+-   Notifications
+-   Reports
+-   Settings
+-   User Management
+
+---
+
+# WebSocket Events
+
+## Authentication
+
+Client
+
+```json
+{
+    "sendType": "auth",
+    "token": "ACCESS_TOKEN"
+}
+```
+
+Server
+
+```json
+{
+    "sendType": "auth_success",
+    "authenticated": true,
+    "user_id": 101
+}
+```
+
+---
+
+## Send Message
+
+```json
+{
+    "sendType": "message",
+    "receiverId": 102,
+    "message": "Hello"
+}
+```
+
+---
+
+## Update Read Status
+
+```json
+{
+    "sendType": "update_read_status",
+    "receiverId": 102
+}
+```
+
+---
+
+## Get Unread Messages
+
+```json
+{
+    "sendType": "totalMsg"
+}
+```
+
+---
+
+## Change Duty Status
+
+Server Event
+
+```json
+{
+    "sendType": "change-duty-status",
+    "status": "Driving"
+}
+```
+
+---
+
+## Force Logout
+
+Server Event
+
+```json
+{
+    "sendType": "force_logout"
+}
+```
+
+---
+
+# REST APIs
+
+The application communicates with Laravel APIs for:
+
+-   Login
+-   Authentication
+-   Driver Information
+-   Fleet Data
+-   Driver Logs
+-   Upload Images
+-   Upload Documents
+-   Panic Alerts
+-   Reports
+-   User Management
+-   Duty Status
+-   Notifications
+
+---
+
+# Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/your-username/eld-project.git
+```
+
+---
+
+## Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Backend
+
+```bash
+composer install
+php artisan migrate
+php artisan serve
+```
+
+---
+
+## WebSocket Server
+
+```bash
+cd websocket
+npm install
+node server.js
+```
+
+---
+
+# Environment Variables
+
+Frontend
+
+```env
+NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_WS_URL=
+```
+
+Backend
+
+```env
+APP_URL=
+DB_HOST=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+```
+
+WebSocket
+
+```env
+PORT=3001
+BACKEND_URL=
+DB_HOST=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+```
+
+---
+
+# Project Structure
+
+```
+Frontend (Next.js)
+├── src/
+├── components/
+├── services/
+├── app/
+
+Backend (Laravel)
+├── app/
+├── routes/
+├── database/
+├── storage/
+
+WebSocket
+├── server.js
+├── helpers/
+├── controllers/
+```
+
+---
+
+# Security
+
+-   JWT Authentication
+-   Protected APIs
+-   WebSocket Token Authentication
+-   Role-Based Access Control
+-   Secure REST Communication
+-   CORS Protection
+
+---
+
+# Future Enhancements
+
+-   Push Notifications
+-   GPS Tracking Improvements
+-   Offline Log Synchronization
+-   Driver Performance Analytics
+-   Mobile Application Enhancements
+-   Fleet Health Monitoring
+
+---
+
+# Contributors
+
+**Prashant Chaubey**
+
+Full Stack Developer
+
+Technologies:
+
+-   Laravel
+-   Next.js
+-   React
+-   Node.js
+-   WebSocket
+-   MySQL
+-   JavaScript
+
+---
+
+# License
+
+This project is intended for internal/company use unless otherwise specified.
