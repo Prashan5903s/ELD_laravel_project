@@ -43,6 +43,8 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::get('change/mobile/duty/status/{id}/{lat}/{long}/{text}', [HOSMobileAPIController::class, 'change_mobile_duty_status']);
 
+    Route::get('new/dashboard/mobile/data/index', [DashboardMobieAPIController::class, 'new_dashboard_data_index'])->name('dashboard.mobile.data');
+
     Route::get('dashboard/mobile/data', [DashboardMobieAPIController::class, 'dashboard_data_index'])->name('dashboard.mobile.data');
 
     Route::get('activity/mobile/log/data/{count?}/{page?}', [ActivityLogMobileAPIController::class, 'index']);
