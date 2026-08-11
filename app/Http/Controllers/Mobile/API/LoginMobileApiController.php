@@ -172,7 +172,6 @@ class LoginMobileApiController extends Controller
         }
 
     }
-
     public function checkAccessToken(Request $request)
     {
         try {

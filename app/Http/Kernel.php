@@ -85,7 +85,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'mobileAPI' => \App\Http\Middleware\MobileAPIMiddleware::class,
-
         // Add your custom route middlewares here
 
         'SA' => \App\Http\Middleware\SACheck::class,
