@@ -589,6 +589,54 @@ function new_dashboard_driver_log_time($id, $time)
     return $data;
 }
 
+function mobile_insertMissingLogs($data)
+{
+
+    $result = [];
+
+    $idCounter = 200; // Start new IDs from 200 or any unique number
+
+    for ($i = 0; $i < count($data) - 1; $i++) {
+
+        // Add the current log to the result
+
+        $result[] = $data[$i];
+
+        // Check if the end_time of the current log matches the start_time of the next log
+
+        $currentEndTime = $data[$i]["end_log_time"];
+
+        $nextStartTime = $data[$i + 1]["start_log_time"];
+
+        // If there's a mismatch, insert a new log
+
+        if ($currentEndTime !== $nextStartTime) {
+
+            $newLog = [
+
+                "log_id" => $data[$i]["log_id"], // Unique ID
+                "shift_id" => 1, // Same status
+                "log_name" => "Off duty", // Same status description
+                "start_log_time" => $currentEndTime, // Start time is the end time of the current log
+                "end_log_time" => $nextStartTime, // End time is the start time of the next log
+                'vehicle_name' => $data[$i]["vehicle_name"], // Same location (A02),
+                'vehicle_id' => $data[$i]["vehicle_id"], // Same location (A02)
+            ];
+
+            $result[] = $newLog; // Add the new log to the result
+
+        }
+    }
+
+    // Add the last log
+    if (count($data) > 0) {
+
+        $result[] = $data[count($data) - 1];
+    }
+
+    return $result;
+}
+
 function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $masterId)
 {
 
@@ -798,7 +846,7 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
             }
         }
 
-        $datass = insertMissingLogs($datass);
+        $datass = mobile_insertMissingLogs($datass);
 
         $arrayLen = count($datass);
 

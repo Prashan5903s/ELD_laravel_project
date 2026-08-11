@@ -12387,58 +12387,58 @@ function hos_date_data_test($id, $startTime, $endTime)
     return $datas;
 }
 
-function insertMissingLogs($data)
-{
+    function insertMissingLogs($data)
+    {
 
-    $result = [];
+        $result = [];
 
-    $idCounter = 200; // Start new IDs from 200 or any unique number
+        $idCounter = 200; // Start new IDs from 200 or any unique number
 
-    for ($i = 0; $i < count($data) - 1; $i++) {
+        for ($i = 0; $i < count($data) - 1; $i++) {
 
-        // Add the current log to the result
+            // Add the current log to the result
 
-        $result[] = $data[$i];
+            $result[] = $data[$i];
 
-        // Check if the end_time of the current log matches the start_time of the next log
+            // Check if the end_time of the current log matches the start_time of the next log
 
-        $currentEndTime = $data[$i][4];
+            $currentEndTime = $data[$i][4];
 
-        $nextStartTime = $data[$i + 1][3];
+            $nextStartTime = $data[$i + 1][3];
 
-        // If there's a mismatch, insert a new log
+            // If there's a mismatch, insert a new log
 
-        if ($currentEndTime !== $nextStartTime) {
+            if ($currentEndTime !== $nextStartTime) {
 
-            $newLog = [
+                $newLog = [
 
-                $data[$i][0], // Unique ID
+                    $data[$i][0], // Unique ID
 
-                1, // Same status
+                    1, // Same status
 
-                "Off duty", // Same status description
+                    "Off duty", // Same status description
 
-                $currentEndTime, // Start time is the end time of the current log
+                    $currentEndTime, // Start time is the end time of the current log
 
-                $nextStartTime, // End time is the start time of the next log
+                    $nextStartTime, // End time is the start time of the next log
 
-                $data[$i][5], // Same location (A02)
+                    $data[$i][5], // Same location (A02)
 
-            ];
+                ];
 
-            $result[] = $newLog; // Add the new log to the result
+                $result[] = $newLog; // Add the new log to the result
 
+            }
         }
+
+        // Add the last log
+        if (count($data) > 0) {
+
+            $result[] = $data[count($data) - 1];
+        }
+
+        return $result;
     }
-
-    // Add the last log
-    if (count($data) > 0) {
-
-        $result[] = $data[count($data) - 1];
-    }
-
-    return $result;
-}
 
 function insertHOSMissingLogs($data)
 {
