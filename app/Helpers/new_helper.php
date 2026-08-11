@@ -811,8 +811,8 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
 
             $last = Carbon::parse($timeData[1]);
 
-            $vehicle = Vehicle::select("name")
-                ->where("id", $data->vehicle_id)
+            $vehicle = Vehicle::select('id', 'name')
+                ->where('id', $data->vehicle_id)
                 ->first();
 
             $log = $data->current_shift_status;
