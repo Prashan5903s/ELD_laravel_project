@@ -60,51 +60,51 @@ class LoginMobileApiController extends Controller
 
                 if ($activeSession) {
 
-                    // if ($request->input('force') == "1") {
+                    if ($request->input('force') == "1") {
 
-                    //     $oldToken = $activeSession->user_token;
+                        $oldToken = $activeSession->user_token;
 
-                    //     $activeSession->update([
-                    //         'log_status' => 'o',
-                    //         'logout_time' => $currTime,
-                    //     ]);
+                        $activeSession->update([
+                            'log_status' => 'o',
+                            'logout_time' => $currTime,
+                        ]);
 
-                    //     try {
-                    //         if ($oldToken) {
+                        try {
+                            if ($oldToken) {
 
-                    //             Http::post('https://lms.learningink.com/socket/broadcast-force-logout', [
-                    //                 'sendType' => 'change-duty-status',
-                    //                 'driverId' => $user->id,
-                    //                 'token' => $oldToken
-                    //             ]);
+                                Http::post('https://lms.learningink.com/socket/broadcast-force-logout', [
+                                    'sendType' => 'change-duty-status',
+                                    'driverId' => $user->id,
+                                    'token' => $oldToken
+                                ]);
 
-                    //         }
-                    //     } catch (\Throwable $e) {
+                            }
+                        } catch (\Throwable $e) {
 
-                    //         Log::error("Broadcast failed: " . $e->getMessage());
+                            Log::error("Broadcast failed: " . $e->getMessage());
 
-                    //     }
+                        }
 
-                    //     // Revoke old tokens
-                    //     try {
+                        // Revoke old tokens
+                        try {
 
-                    //         $user->tokens()->delete();
+                            $user->tokens()->delete();
 
-                    //     } catch (\Throwable $e) {
+                        } catch (\Throwable $e) {
 
-                    //         Log::error("Token revoke failed: " . $e->getMessage());
+                            Log::error("Token revoke failed: " . $e->getMessage());
 
-                    //     }
+                        }
 
-                    // } else {
+                    } else {
 
-                    //     return response()->json([
-                    //         'success' => false,
-                    //         'statusCode' => 409,
-                    //         'message' => "You are already logged in on another device.",
-                    //     ], 409);
+                        return response()->json([
+                            'success' => false,
+                            'statusCode' => 409,
+                            'message' => "You are already logged in on another device.",
+                        ], 409);
 
-                    // }
+                    }
 
                 } else {
 
