@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Mobile\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\BluetoothLogData;
+use App\Models\CoDriver;
 use App\Models\Device;
 use App\Models\DriverShiftLog;
 use App\Models\RuleAssign;
@@ -12,6 +13,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleAssign;
 use App\Models\VehicleLogHistory;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -244,7 +246,7 @@ class HOSMobileAPIController extends Controller
         }
     }
 
-    public function hos_mobile_data($start, $end)
+    public function hos_mobile_data()
     {
 
         $auth = Auth::check();
@@ -257,7 +259,101 @@ class HOSMobileAPIController extends Controller
 
             $id = $user->id;
 
-            $datas = hos_date_data($id, $start, $end);
+            $masterId = $user->created_by;
+
+            //Helper function name hos_date_data
+
+            $userDriver = User::where("user_type", "U")
+                ->where("id", "!=", $id)
+                ->where("master_id", $user->master_id)
+                ->select("id", "first_name", "last_name")
+                ->get();
+
+            $userInfo = UserInfo::where('user_id', $id)->first();
+
+            $timezone = $userInfo->home_terminal_timezone;
+
+            $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
+
+            $currentTime = Carbon::parse($currentTime);
+
+            $end = date('Y-m-d', strtotime($currentTime));
+            $start = date('Y-m-d', strtotime($end . ' -7 days'));
+
+            $period = CarbonPeriod::create($start, "1 day", $end);
+
+            $dates = [];
+
+            foreach ($period as $date) {
+
+                $dates[] = $date->format("Y-m-d");
+            }
+
+            if ($dates && count($dates) > 0) {
+
+                for ($i = count($dates) - 1; $i >= 0; $i--) {
+
+                    $data = $dates[$i];
+
+                    $coDriver = CoDriver::where("user_id", $id)
+                        ->where("codriver_date", $data)
+                        ->select("user_id", "codriver_id")
+                        ->first();
+
+                    $startDay = Carbon::parse($data)->startOfDay();
+
+                    $endDay = Carbon::parse($data)->endOfDay();
+
+                    $graphData = mobile_graph_hos_log_data($id, $startDay, $endDay, $currentTime, $masterId);
+
+                    $finalData = [];
+
+                    if ($graphData && count($graphData) >= 3) {
+
+                        $finalData['graph_data'] = $graphData[0];
+
+                        $distinctVehicle = [];
+
+                        if (!empty($finalData['graph_data']) && count($finalData['graph_data']) > 0) {
+
+                            foreach ($finalData['graph_data'] as $veh) {
+
+                                $name = $veh["vehicle_name"];
+
+                                // Check if name already exists in the array
+                                $exists = collect($distinctVehicle)->contains('name', $name);
+
+                                if (!$exists) {
+
+                                    $distinctVehicle[] = ['name' => $name];
+                                }
+                            }
+                        }
+
+                        $finalData['vehicle'] = $distinctVehicle;
+                        $finalData['violation_data'] = $graphData[2];
+                        $finalData['total_log_time'] = $graphData[3];
+                        $finalData['inspection_exist'] = $graphData[4];
+                        $finalData['coDriver_data'] = $coDriver;
+                        $finalData['coDriver_list'] = $userDriver;
+                        $finalData['distance_diffr'] = $graphData[5];
+                        $finalData["odometer"] = $graphData[6];
+                        $finalData["start_location"] = $graphData[7];
+                        $finalData['location_end'] = $graphData[8];
+                        $finalData['engine_hour'] = $graphData[9];
+
+                    }
+
+                    $datas[] = [
+
+                        $data => $finalData
+
+                    ];
+                }
+
+            }
+
+            // $datas = hos_date_data($id, $start, $end);
 
             $data = [
                 'status' => 'success',
