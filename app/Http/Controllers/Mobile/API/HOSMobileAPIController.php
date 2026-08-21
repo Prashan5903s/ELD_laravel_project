@@ -834,7 +834,7 @@ class HOSMobileAPIController extends Controller
         }
 
         DriverShiftLog::where('driver_id', $driverId)
-            ->whereColumn('start_log_time_unix', '>=', 'end_log_time_unix')
+            ->whereColumn('start_log_time', '>=', 'end_log_time')
             ->delete();
 
         $datas = mobile_graph_hos_chart($driverId, $startTime, $endTime, $currentTime, $masterId);
