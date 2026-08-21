@@ -1603,13 +1603,7 @@ function hod_log_mobile_time_data_edit(
 
     DB::transaction(function () use ($driverId, $vehicleId, $shiftId, $create, $last, $currentTime, $location, $notes) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Find ALL logs which overlap the requested range
-        |--------------------------------------------------------------------------
-        */
-
-        $logs = DriverShiftLog::where('driver_id', $driverId)
+        $existingLogs = DriverShiftLog::where('driver_id', $driverId)
             ->where('vehicle_id', $vehicleId)
             ->where('start_log_time', '<', $last)
             ->where(function ($q) use ($create) {
@@ -1619,81 +1613,33 @@ function hod_log_mobile_time_data_edit(
             ->orderBy('start_log_time')
             ->get();
 
-        foreach ($logs as $log) {
+        foreach ($existingLogs as $existingLog) {
 
-            $start = Carbon::parse($log->start_log_time);
+            $existingStart = Carbon::parse(
+                $existingLog->start_log_time
+            );
 
-            $end = $log->end_log_time
-                ? Carbon::parse($log->end_log_time)
+            $existingEnd = $existingLog->end_log_time
+                ? Carbon::parse($existingLog->end_log_time)
                 : $currentTime;
 
-            /*
-            |--------------------------------------------------------------------------
-            | CASE 1
-            |
-            | Existing completely surrounds new range
-            |
-            | Existing: 00:00 ---------------- 12:00
-            | New:             03:00 ---- 09:00
-            |
-            | Result:
-            | 00:00 → 03:00
-            | 09:00 → 12:00
-            |--------------------------------------------------------------------------
-            */
+            if (
+                $existingStart->gte($create) &&
+                $existingEnd->lte($last)
+            ) {
 
-            if ($start->lt($create) && $end->gt($last)) {
-
-                $oldEnd = $end->copy();
-
-                $log->update([
-                    'end_log_time' => $create,
-                    'end_log_time_unix' => $create->timestamp,
-                ]);
-
-                DriverShiftLog::create([
-                    'driver_id' => $log->driver_id,
-                    'vehicle_id' => $log->vehicle_id,
-                    'current_shift_status' => $log->current_shift_status,
-
-                    'start_log_time' => $last,
-                    'end_log_time' => $oldEnd,
-
-                    'start_log_time_unix' => $last->timestamp,
-                    'end_log_time_unix' => $oldEnd->timestamp,
-
-                    'location_name' => $log->location_name,
-                    'location_end' => $log->location_end,
-                    'notes' => $log->notes,
-
-                    'system_entry' => $log->system_entry,
-                    'is_add_approved' => $log->is_add_approved,
-                ]);
+                $existingLog->delete();
 
                 continue;
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | CASE 2
-            |
-            | Existing overlaps LEFT side
-            |
-            | Existing: 00:00 → 09:00
-            | New:      03:00 → 09:00
-            |
-            | Result:
-            | 00:00 → 03:00
-            |--------------------------------------------------------------------------
-            */
-
             if (
-                $start->lt($create) &&
-                $end->gt($create) &&
-                $end->lte($last)
+                $create->gt($existingStart) &&
+                $create->lt($existingEnd) &&
+                $last->gte($existingEnd)
             ) {
 
-                $log->update([
+                $existingLog->update([
                     'end_log_time' => $create,
                     'end_log_time_unix' => $create->timestamp,
                 ]);
@@ -1701,27 +1647,13 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | CASE 3
-            |
-            | Existing overlaps RIGHT side
-            |
-            | Existing: 04:00 → 12:00
-            | New:      03:00 → 09:00
-            |
-            | Result:
-            | 09:00 → 12:00
-            |--------------------------------------------------------------------------
-            */
-
             if (
-                $start->gte($create) &&
-                $start->lt($last) &&
-                $end->gt($last)
+                $last->gt($existingStart) &&
+                $last->lt($existingEnd) &&
+                $create->lte($existingStart)
             ) {
 
-                $log->update([
+                $existingLog->update([
                     'start_log_time' => $last,
                     'start_log_time_unix' => $last->timestamp,
                 ]);
@@ -1729,46 +1661,26 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | CASE 4
-            |
-            | Existing is completely inside new range
-            |
-            | Existing: 04:00 → 08:00
-            | New:      03:00 → 09:00
-            |
-            | Delete it.
-            |--------------------------------------------------------------------------
-            */
-
             if (
-                $start->gte($create) &&
-                $end->lte($last)
+                $create->lte($existingStart) &&
+                $last->gte($existingEnd)
             ) {
 
-                $log->delete();
+                $existingLog->delete();
 
                 continue;
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | IMPORTANT:
-        | Check whether the exact range already exists.
-        |--------------------------------------------------------------------------
-        */
-
-        $existingSameRange = DriverShiftLog::where('driver_id', $driverId)
+        $sameLog = DriverShiftLog::where('driver_id', $driverId)
             ->where('vehicle_id', $vehicleId)
             ->where('start_log_time', $create)
             ->where('end_log_time', $last)
             ->first();
 
-        if ($existingSameRange) {
+        if ($sameLog) {
 
-            $existingSameRange->update([
+            $sameLog->update([
                 'current_shift_status' => $shiftId,
                 'location_name' => $location,
                 'location_end' => $location,
@@ -1778,12 +1690,6 @@ function hod_log_mobile_time_data_edit(
 
             return;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Insert new log
-        |--------------------------------------------------------------------------
-        */
 
         DriverShiftLog::create([
             'driver_id' => $driverId,
