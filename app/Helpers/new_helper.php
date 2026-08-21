@@ -1605,22 +1605,11 @@ function hod_log_mobile_time_data_edit(
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 1
-        | Find every existing log which overlaps the new range.
-        |
-        | New range:
-        |       $create ---------------- $last
-        |
-        | Existing log can be:
-        |
-        | 1. Completely inside
-        | 2. Cover the complete new range
-        | 3. Overlap from left
-        | 4. Overlap from right
+        | Find all logs which overlap requested time
         |--------------------------------------------------------------------------
         */
 
-        $overlappingLogs = DriverShiftLog::where('driver_id', $driverId)
+        $logs = DriverShiftLog::where('driver_id', $driverId)
             ->where('start_log_time', '<', $last)
             ->where(function ($q) use ($create) {
                 $q->whereNull('end_log_time')
@@ -1629,7 +1618,7 @@ function hod_log_mobile_time_data_edit(
             ->orderBy('start_log_time')
             ->get();
 
-        foreach ($overlappingLogs as $log) {
+        foreach ($logs as $log) {
 
             $start = Carbon::parse($log->start_log_time);
 
@@ -1639,19 +1628,14 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |--------------------------------------------------------------------------
-            | CASE 1
-            | Existing log completely covers new log
+            | 1. Existing log completely covers requested range
             |
-            | Existing:
-            | 00:00 ---------------- 12:00
-            |
-            | New:
-            |       03:00 ---- 09:00
+            | Existing: 00:00 → 12:00
+            | New:      03:00 → 09:00
             |
             | Result:
-            | 00:00 -- 03:00
-            | 03:00 -- 09:00  NEW
-            | 09:00 -- 12:00
+            | 00:00 → 03:00
+            | 09:00 → 12:00
             |--------------------------------------------------------------------------
             */
 
@@ -1693,18 +1677,13 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |--------------------------------------------------------------------------
-            | CASE 2
-            | Existing log overlaps the LEFT side
+            | 2. Existing log overlaps LEFT side
             |
-            | Existing:
-            | 00:00 -------- 05:00
-            |
-            | New:
-            |       03:00 -------- 09:00
+            | Existing: 00:00 → 05:00
+            | New:      03:00 → 09:00
             |
             | Result:
-            | 00:00 -- 03:00
-            | 03:00 -------- 09:00 NEW
+            | 00:00 → 03:00
             |--------------------------------------------------------------------------
             */
 
@@ -1724,18 +1703,13 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |--------------------------------------------------------------------------
-            | CASE 3
-            | Existing log overlaps the RIGHT side
+            | 3. Existing log overlaps RIGHT side
             |
-            | Existing:
-            |       07:00 -------- 12:00
-            |
-            | New:
-            | 03:00 -------- 09:00
+            | Existing: 07:00 → 12:00
+            | New:      03:00 → 09:00
             |
             | Result:
-            | 03:00 -------- 09:00 NEW
-            |             09:00 -- 12:00
+            | 09:00 → 12:00
             |--------------------------------------------------------------------------
             */
 
@@ -1755,16 +1729,12 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |--------------------------------------------------------------------------
-            | CASE 4
-            | Existing log is completely inside new range
+            | 4. Existing log completely inside requested range
             |
-            | Existing:
-            |       05:00 -- 07:00
+            | Existing: 05:00 → 07:00
+            | New:      03:00 → 09:00
             |
-            | New:
-            | 03:00 ---------------- 09:00
-            |
-            | Existing log must be deleted.
+            | Delete existing log
             |--------------------------------------------------------------------------
             */
 
@@ -1780,43 +1750,7 @@ function hod_log_mobile_time_data_edit(
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 2
-        | Remove any invalid logs before inserting new one.
-        |--------------------------------------------------------------------------
-        */
-
-        DriverShiftLog::where('driver_id', $driverId)
-            ->where(function ($q) {
-                $q->whereColumn(
-                    'start_log_time',
-                    '>=',
-                    'end_log_time'
-                )->orWhereColumn(
-                        'start_log_time_unix',
-                        '>=',
-                        'end_log_time_unix'
-                    );
-            })
-            ->delete();
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 3
-        | Remove exact duplicate of the log we are about to insert.
-        |--------------------------------------------------------------------------
-        */
-
-        DriverShiftLog::where('driver_id', $driverId)
-            ->where('vehicle_id', $vehicleId)
-            ->where('current_shift_status', $shiftId)
-            ->where('start_log_time', $create)
-            ->where('end_log_time', $last)
-            ->delete();
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 4
-        | Insert the new edited log.
+        | Insert requested log
         |--------------------------------------------------------------------------
         */
 
@@ -1841,10 +1775,7 @@ function hod_log_mobile_time_data_edit(
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 5
-        | Final cleanup.
-        |
-        | Remove invalid logs and exact duplicates.
+        | Remove invalid logs
         |--------------------------------------------------------------------------
         */
 
@@ -1864,7 +1795,7 @@ function hod_log_mobile_time_data_edit(
 
         /*
         |--------------------------------------------------------------------------
-        | Remove exact duplicate ranges.
+        | Remove exact duplicate ranges
         |--------------------------------------------------------------------------
         */
 

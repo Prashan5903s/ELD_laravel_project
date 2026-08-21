@@ -760,7 +760,10 @@ class HOSMobileAPIController extends Controller
 
                 'log_data.*.vehicle_id' => 'required|integer',
                 'log_data.*.shift_id' => 'required|integer',
-                'log_data.*.log_id' => 'required|integer',
+
+                // Can remain because frontend is sending it,
+                // but it is not used for the edit logic.
+                'log_data.*.log_id' => 'nullable|integer',
 
                 'log_data.*.edit_start' => 'required|date_format:H:i:s',
                 'log_data.*.edit_end' => 'required|date_format:H:i:s',
@@ -835,7 +838,7 @@ class HOSMobileAPIController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Process logs sequentially
+            | Process every submitted log in order
             |--------------------------------------------------------------------------
             */
 
@@ -843,7 +846,6 @@ class HOSMobileAPIController extends Controller
 
                 $vehicleId = $log['vehicle_id'];
                 $shiftId = $log['shift_id'];
-                $logId = $log['log_id'];
 
                 $location = $log['location'];
                 $notes = $log['notes'] ?? null;
@@ -877,7 +879,7 @@ class HOSMobileAPIController extends Controller
                         'statusCode' => 422,
                         'message' => 'Invalid log duration.',
                         'errors' => [
-                            "log_data.$index.edit_start" => [
+                            "log_data.$index" => [
                                 "Start time ({$log['edit_start']}) must be earlier than end time ({$log['edit_end']})."
                             ],
                         ],
@@ -886,58 +888,7 @@ class HOSMobileAPIController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Make sure requested log exists
-                |--------------------------------------------------------------------------
-                */
-
-                $existingLog = DriverShiftLog::where('id', $logId)
-                    ->where('driver_id', $driverId)
-                    ->first();
-
-                if (!$existingLog) {
-
-                    return response()->json([
-                        'status' => 'failure',
-                        'statusCode' => 404,
-                        'message' => "Log ID {$logId} not found for this driver.",
-                        'errors' => [
-                            "log_data.$index.log_id" => [
-                                "The selected log does not exist."
-                            ],
-                        ],
-                    ], 404);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Check if another log already has exactly the requested range.
-                |
-                | Exclude the log currently being edited.
-                |--------------------------------------------------------------------------
-                */
-
-                $duplicateLog = DriverShiftLog::where('driver_id', $driverId)
-                    ->where('id', '!=', $logId)
-                    ->where('start_log_time', $logStartTime)
-                    ->where('end_log_time', $logEndTime)
-                    ->first();
-
-                if ($duplicateLog) {
-
-                    /*
-                    |------------------------------------------------------------------
-                    | If exact same range already exists, remove the edited log.
-                    |------------------------------------------------------------------
-                    */
-
-                    $existingLog->delete();
-
-                    continue;
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Edit the log
+                | Edit based ONLY on time range
                 |--------------------------------------------------------------------------
                 */
 
@@ -949,14 +900,13 @@ class HOSMobileAPIController extends Controller
                     $logEndTime,
                     $currentTime,
                     $location,
-                    $notes,
-                    $logId
+                    $notes
                 );
             }
 
             /*
             |--------------------------------------------------------------------------
-            | Final cleanup
+            | Final invalid-log cleanup
             |--------------------------------------------------------------------------
             */
 
