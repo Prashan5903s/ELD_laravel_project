@@ -613,10 +613,25 @@ function mobile_insertMissingLogs($data)
             continue;
         }
 
-        $result[] = $data[$i];
-
         $currentEnd = strtotime($data[$i]['end_log_time']);
         $nextStart = strtotime($data[$i + 1]['start_log_time']);
+
+        // If this log overlaps the next one, trim its end back to the
+        // next log's start so overlapping fragments never reach the response.
+        if ($currentEnd > $nextStart) {
+            $data[$i]['end_log_time'] = date("H:i:s", $nextStart);
+            $currentEnd = $nextStart;
+        }
+
+        // After trimming, the log may have become zero/negative length; drop it.
+        if (
+            strtotime($data[$i]['start_log_time']) >=
+            strtotime($data[$i]['end_log_time'])
+        ) {
+            continue;
+        }
+
+        $result[] = $data[$i];
 
         // Insert missing OFF DUTY log only when there is a real gap
         if ($currentEnd < $nextStart) {
@@ -631,9 +646,6 @@ function mobile_insertMissingLogs($data)
                 "vehicle_id" => $data[$i]["vehicle_id"],
             ];
         }
-
-        // If currentEnd > nextStart, logs overlap.
-        // Do NOT insert anything.
     }
 
     $last = end($data);
@@ -1631,7 +1643,7 @@ function hod_log_mobile_time_data_edit(
             |----------------------------------------------------------------
             | RULE A
             |
-            | Existing log fully inside edited range.
+            | Existing log fully inside edited range (or exactly equal).
             |
             | Existing: 04:00 -> 06:00
             | Edited:   01:00 -> 09:00
@@ -1648,66 +1660,9 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |----------------------------------------------------------------
-            | RULE B
-            |
-            | Existing log contains edited_start, and edited_end reaches
-            | past (or exactly to) existing_end.
-            |
-            | Existing: 00:00 -> 04:00
-            | Edited:   01:00 -> 09:00
-            |
-            | Result:
-            | Existing: 00:00 -> 01:00   (truncate end to edited_start)
-            |----------------------------------------------------------------
-            */
-            if (
-                $existingStart->lte($create) &&
-                $create->lt($existingEnd) &&
-                $last->gte($existingEnd)
-            ) {
-
-                $existingLog->update([
-                    'end_log_time' => $create,
-                    'end_log_time_unix' => $create->timestamp,
-                ]);
-
-                continue;
-            }
-
-            /*
-            |----------------------------------------------------------------
-            | RULE C
-            |
-            | Existing log contains edited_end, and edited_start reaches
-            | before (or exactly to) existing_start.
-            |
-            | Existing: 06:00 -> 12:00
-            | Edited:   01:00 -> 09:00
-            |
-            | Result:
-            | Existing: 09:00 -> 12:00   (truncate start to edited_end)
-            |----------------------------------------------------------------
-            */
-            if (
-                $create->lte($existingStart) &&
-                $last->gt($existingStart) &&
-                $last->lte($existingEnd)
-            ) {
-
-                $existingLog->update([
-                    'start_log_time' => $last,
-                    'start_log_time_unix' => $last->timestamp,
-                ]);
-
-                continue;
-            }
-
-            /*
-            |----------------------------------------------------------------
             | RULE D
             |
-            | Edited range completely covers existing range
-            | (edges exactly matching or beyond on both sides).
+            | Edited range completely covers existing range.
             |
             | Existing: 04:00 -> 08:00
             | Edited:   01:00 -> 09:00
@@ -1721,7 +1676,115 @@ function hod_log_mobile_time_data_edit(
 
                 continue;
             }
+
+            /*
+            |----------------------------------------------------------------
+            | RULE B
+            |
+            | edited_start falls strictly inside the existing log
+            | -> truncate existing log's end to edited_start.
+            |
+            | Existing: 00:00 -> 09:00
+            | Edited:   03:00 -> 05:00   (edit start lands inside existing)
+            |
+            | Result:
+            | Existing: 00:00 -> 03:00
+            |----------------------------------------------------------------
+            */
+            if ($create->gt($existingStart) && $create->lt($existingEnd)) {
+
+                $existingLog->update([
+                    'end_log_time' => $create,
+                    'end_log_time_unix' => $create->timestamp,
+                ]);
+
+                continue;
+            }
+
+            /*
+            |----------------------------------------------------------------
+            | RULE B-EDGE
+            |
+            | edited_start is exactly equal to existing_start, and
+            | edited_end lands strictly inside existing (not past it,
+            | that case is already handled by Rule A/D above)
+            | -> existing shrinks to start at edited_end.
+            |
+            | Existing: 00:00 -> 09:00
+            | Edited:   00:00 -> 01:00
+            |
+            | Result:
+            | Existing: 01:00 -> 09:00
+            |----------------------------------------------------------------
+            */
+            if ($create->eq($existingStart) && $last->lt($existingEnd)) {
+
+                $existingLog->update([
+                    'start_log_time' => $last,
+                    'start_log_time_unix' => $last->timestamp,
+                ]);
+
+                continue;
+            }
+
+            /*
+            |----------------------------------------------------------------
+            | RULE C
+            |
+            | edited_end falls strictly inside the existing log
+            | -> truncate existing log's start to edited_end.
+            |
+            | Existing: 06:00 -> 12:00
+            | Edited:   01:00 -> 09:00
+            |
+            | Result:
+            | Existing: 09:00 -> 12:00
+            |----------------------------------------------------------------
+            */
+            if ($last->gt($existingStart) && $last->lt($existingEnd)) {
+
+                $existingLog->update([
+                    'start_log_time' => $last,
+                    'start_log_time_unix' => $last->timestamp,
+                ]);
+
+                continue;
+            }
+
+            /*
+            |----------------------------------------------------------------
+            | RULE C-EDGE
+            |
+            | edited_end is exactly equal to existing_end, and
+            | edited_start lands strictly inside existing (not before it,
+            | that case is already handled by Rule A/D above)
+            | -> existing shrinks to end at edited_start.
+            |
+            | Existing: 00:00 -> 09:00
+            | Edited:   09:00 -> 23:59:59
+            |
+            | Result:
+            | Existing: 00:00 -> 09:00 stays as-is here since edited_start
+            | (09:00) is NOT strictly inside existing; this rule only
+            | triggers when edited_start > existing_start.
+            |----------------------------------------------------------------
+            */
+            if ($last->eq($existingEnd) && $create->gt($existingStart)) {
+
+                $existingLog->update([
+                    'end_log_time' => $create,
+                    'end_log_time_unix' => $create->timestamp,
+                ]);
+
+                continue;
+            }
         }
+
+        // Clean up any zero-length or invalid fragments produced above
+        DriverShiftLog::where('driver_id', $driverId)
+            ->where('vehicle_id', $vehicleId)
+            ->whereColumn('start_log_time', '>=', 'end_log_time')
+            ->delete();
 
         /*
         |--------------------------------------------------------------------------
@@ -1758,13 +1821,17 @@ function hod_log_mobile_time_data_edit(
             'driver_id' => $driverId,
             'vehicle_id' => $vehicleId,
             'current_shift_status' => $shiftId,
+
             'start_log_time' => $create,
             'end_log_time' => $last,
+
             'start_log_time_unix' => $create->timestamp,
             'end_log_time_unix' => $last->timestamp,
+
             'location_name' => $location,
             'location_end' => $location,
             'notes' => $notes,
+
             'system_entry' => 0,
             'is_add_approved' => 1,
         ]);
