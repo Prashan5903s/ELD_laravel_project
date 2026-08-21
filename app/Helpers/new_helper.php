@@ -1468,8 +1468,6 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
         $engineHourFinal,
     ];
 }
-
-
 function check_hos_mobile_log_driver_exist(
     $driverId,
     $logStartTime,

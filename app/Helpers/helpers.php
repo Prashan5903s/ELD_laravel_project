@@ -10644,139 +10644,83 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
     $viol = check_eld_rules($id, $startTime, $endTime);
 
     $distinctVehicleIds = DriverShiftLog::where("driver_id", $id)
-
         ->where("is_add_approved", 1)
-
         ->where(function ($query) use ($create, $last, $currentTime) {
-
             $query->where(function ($subQuery) use ($create, $last, $currentTime) {
-
                 $subQuery->where(function ($q) use ($create, $last, $currentTime) {
-
                     $q->where("start_log_time", ">=", $create)
-
                         ->where("start_log_time", "<=", $last)
-
                         ->orWhere(function ($query) use ($create, $last, $currentTime) {
-
                             $query
-
                                 ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-
                                     $currentTime,
-
                                     $create,
-
                                 ])
-
                                 ->whereRaw("IFNULL(end_log_time, ?) <= ?", [
-
                                     $currentTime,
-
                                     $last,
-
                                 ]);
                         })
-
                         ->orWhere(function ($q2) use ($create, $last, $currentTime) {
-
                             $q2->where("start_log_time", "<=", $create)
-
                                 ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-
                                     $currentTime,
-
                                     $last,
-
                                 ]);
                         })
-
                         ->orWhere(function ($q3) use ($create) {
-
                             $q3->whereColumn("end_log_time", "start_log_time")
-
                                 ->orWhereRaw("end_log_time = ?", [$create]);
                         });
                 });
             });
         })
-
         ->select("vehicle_id", "start_log_time") // Add start_log_time to select
-
         ->orderBy("start_log_time", "asc")
-
         ->distinct()
-
         ->pluck("vehicle_id");
 
     // Get distinct vehicle records
-
     $distinctVehicles = Vehicle::whereIn("id", $distinctVehicleIds)->get();
 
     $driverShift = DriverShiftLog::where("driver_id", $id)
-
         ->where("is_add_approved", 1)
-
         ->where(function ($query) use ($create, $last, $currentTime) {
-
             $query->where(function ($subQuery) use ($create, $last, $currentTime) {
-
                 // Check if there is any overlap between the time range and the log times
-    
                 $subQuery->where(function ($q) use ($create, $last, $currentTime) {
-
                     // Check if the log's start time is within the range of create and last
-    
                     $q->where("start_log_time", ">=", $create)
-
                         ->where("start_log_time", "<=", $last)
-
                         // Check if the log's end time is within the range of create and last
-    
                         ->orWhere(function ($query) use ($create, $last, $currentTime) {
-
-                            $query
-
-                                ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-
-                                    $currentTime,
-
-                                    $create,
-
-                                ])
-
-                                ->whereRaw("IFNULL(end_log_time, ?) <= ?", [
-
-                                    $currentTime,
-
-                                    $last,
-
-                                ]);
-                        })
-
+                        $query
+                            ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
+                                $currentTime,
+                                $create,
+                            ])
+                            ->whereRaw("IFNULL(end_log_time, ?) <= ?", [
+                                $currentTime,
+                                $last,
+                            ]);
+                    })
                         // Check if the log encompasses the range between create and last
-    
                         ->orWhere(function ($q2) use ($create, $last, $currentTime) {
-
-                            $q2->where("start_log_time", "<=", $create)
-
-                                ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-
-                                    $currentTime,
-
-                                    $last,
-
-                                ]);
-                        })
+                        $q2->where("start_log_time", "<=", $create)
+                            ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
+                                $currentTime,
+                                $last,
+                            ]);
+                    })
 
                         // Check if end_log_time equals start_log_time or create
     
                         ->orWhere(function ($q3) use ($create) {
 
-                            $q3->whereColumn("end_log_time", "start_log_time")
+                        $q3->whereColumn("end_log_time", "start_log_time")
 
-                                ->orWhereRaw("end_log_time = ?", [$create]);
-                        });
+                            ->orWhereRaw("end_log_time = ?", [$create]);
+                    });
                 });
             });
         })
@@ -10827,25 +10771,25 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $endTimeFormatted = Carbon::parse($last)->format("H:i:s");
 
-            if ($startTimeFormatted != $endTimeFormatted) {
-
-                $datass[] = [
-
-                    $data->id,
-
-                    $log,
-
-                    $logs,
-
-                    $startTimeFormatted,
-
-                    $endTimeFormatted,
-
-                    $vehicle ? $vehicle->name : '',
-
-                ];
+            // Skip zero-duration logs
+            if ($startTimeFormatted === $endTimeFormatted) {
+                continue;
             }
+
+            $datass[] = [
+                $data->id,
+                $log,
+                $logs,
+                $startTimeFormatted,
+                $endTimeFormatted,
+                $vehicle ? $vehicle->name : '',
+            ];
         }
+
+        // Remove logs having same start and end time
+        $datass = array_values(array_filter($datass, function ($log) {
+            return $log[3] !== $log[4]; // start_time != end_time
+        }));
 
         $datass = insertMissingLogs($datass);
 
@@ -12387,58 +12331,58 @@ function hos_date_data_test($id, $startTime, $endTime)
     return $datas;
 }
 
-    function insertMissingLogs($data)
-    {
+function insertMissingLogs($data)
+{
 
-        $result = [];
+    $result = [];
 
-        $idCounter = 200; // Start new IDs from 200 or any unique number
+    $idCounter = 200; // Start new IDs from 200 or any unique number
 
-        for ($i = 0; $i < count($data) - 1; $i++) {
+    for ($i = 0; $i < count($data) - 1; $i++) {
 
-            // Add the current log to the result
+        // Add the current log to the result
 
-            $result[] = $data[$i];
+        $result[] = $data[$i];
 
-            // Check if the end_time of the current log matches the start_time of the next log
+        // Check if the end_time of the current log matches the start_time of the next log
 
-            $currentEndTime = $data[$i][4];
+        $currentEndTime = $data[$i][4];
 
-            $nextStartTime = $data[$i + 1][3];
+        $nextStartTime = $data[$i + 1][3];
 
-            // If there's a mismatch, insert a new log
+        // If there's a mismatch, insert a new log
 
-            if ($currentEndTime !== $nextStartTime) {
+        if ($currentEndTime !== $nextStartTime) {
 
-                $newLog = [
+            $newLog = [
 
-                    $data[$i][0], // Unique ID
+                $data[$i][0], // Unique ID
 
-                    1, // Same status
+                1, // Same status
 
-                    "Off duty", // Same status description
+                "Off duty", // Same status description
 
-                    $currentEndTime, // Start time is the end time of the current log
+                $currentEndTime, // Start time is the end time of the current log
 
-                    $nextStartTime, // End time is the start time of the next log
+                $nextStartTime, // End time is the start time of the next log
 
-                    $data[$i][5], // Same location (A02)
+                $data[$i][5], // Same location (A02)
 
-                ];
+            ];
 
-                $result[] = $newLog; // Add the new log to the result
+            $result[] = $newLog; // Add the new log to the result
 
-            }
         }
-
-        // Add the last log
-        if (count($data) > 0) {
-
-            $result[] = $data[count($data) - 1];
-        }
-
-        return $result;
     }
+
+    // Add the last log
+    if (count($data) > 0) {
+
+        $result[] = $data[count($data) - 1];
+    }
+
+    return $result;
+}
 
 function insertHOSMissingLogs($data)
 {
