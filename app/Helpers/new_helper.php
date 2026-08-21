@@ -592,50 +592,60 @@ function new_dashboard_driver_log_time($id, $time)
 
 function mobile_insertMissingLogs($data)
 {
+    if (count($data) <= 1) {
+        return $data;
+    }
+
+    // Sort by start time first
+    usort($data, function ($a, $b) {
+        return strtotime($a['start_log_time']) <=> strtotime($b['start_log_time']);
+    });
 
     $result = [];
 
-    $idCounter = 200; // Start new IDs from 200 or any unique number
-
     for ($i = 0; $i < count($data) - 1; $i++) {
 
-        // Add the current log to the result
+        // Skip invalid logs
+        if (
+            strtotime($data[$i]['start_log_time']) >=
+            strtotime($data[$i]['end_log_time'])
+        ) {
+            continue;
+        }
 
         $result[] = $data[$i];
 
-        // Check if the end_time of the current log matches the start_time of the next log
+        $currentEnd = strtotime($data[$i]['end_log_time']);
+        $nextStart = strtotime($data[$i + 1]['start_log_time']);
 
-        $currentEndTime = $data[$i]["end_log_time"];
+        // Insert missing OFF DUTY log only when there is a real gap
+        if ($currentEnd < $nextStart) {
 
-        $nextStartTime = $data[$i + 1]["start_log_time"];
-
-        // If there's a mismatch, insert a new log
-
-        if ($currentEndTime !== $nextStartTime) {
-
-            $newLog = [
-
-                "log_id" => $data[$i]["log_id"], // Unique ID
-                "shift_id" => 1, // Same status
-                "log_name" => "Off duty", // Same status description
-                "start_log_time" => $currentEndTime, // Start time is the end time of the current log
-                "end_log_time" => $nextStartTime, // End time is the start time of the next log
-                'vehicle_name' => $data[$i]["vehicle_name"], // Same location (A02),
-                'vehicle_id' => $data[$i]["vehicle_id"], // Same location (A02)
+            $result[] = [
+                "log_id" => $data[$i]["log_id"],
+                "shift_id" => 1,
+                "log_name" => "Off duty",
+                "start_log_time" => date("H:i:s", $currentEnd),
+                "end_log_time" => date("H:i:s", $nextStart),
+                "vehicle_name" => $data[$i]["vehicle_name"],
+                "vehicle_id" => $data[$i]["vehicle_id"],
             ];
-
-            $result[] = $newLog; // Add the new log to the result
-
         }
+
+        // If currentEnd > nextStart, logs overlap.
+        // Do NOT insert anything.
     }
 
-    // Add the last log
-    if (count($data) > 0) {
+    $last = end($data);
 
-        $result[] = $data[count($data) - 1];
+    if (
+        strtotime($last['start_log_time']) <
+        strtotime($last['end_log_time'])
+    ) {
+        $result[] = $last;
     }
 
-    return $result;
+    return array_values($result);
 }
 
 function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $masterId)

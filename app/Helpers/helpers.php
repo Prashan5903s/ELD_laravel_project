@@ -12333,52 +12333,52 @@ function hos_date_data_test($id, $startTime, $endTime)
 
 function insertMissingLogs($data)
 {
+    if (empty($data)) {
+        return [];
+    }
+
+    // Sort by start time
+    usort($data, function ($a, $b) {
+        return strtotime($a[3]) <=> strtotime($b[3]);
+    });
 
     $result = [];
 
-    $idCounter = 200; // Start new IDs from 200 or any unique number
+    foreach ($data as $i => $log) {
 
-    for ($i = 0; $i < count($data) - 1; $i++) {
-
-        // Add the current log to the result
-
-        $result[] = $data[$i];
-
-        // Check if the end_time of the current log matches the start_time of the next log
-
-        $currentEndTime = $data[$i][4];
-
-        $nextStartTime = $data[$i + 1][3];
-
-        // If there's a mismatch, insert a new log
-
-        if ($currentEndTime !== $nextStartTime) {
-
-            $newLog = [
-
-                $data[$i][0], // Unique ID
-
-                1, // Same status
-
-                "Off duty", // Same status description
-
-                $currentEndTime, // Start time is the end time of the current log
-
-                $nextStartTime, // End time is the start time of the next log
-
-                $data[$i][5], // Same location (A02)
-
-            ];
-
-            $result[] = $newLog; // Add the new log to the result
-
+        // Skip invalid logs
+        if (strtotime($log[3]) >= strtotime($log[4])) {
+            continue;
         }
-    }
 
-    // Add the last log
-    if (count($data) > 0) {
+        $result[] = $log;
 
-        $result[] = $data[count($data) - 1];
+        if (!isset($data[$i + 1])) {
+            continue;
+        }
+
+        $currentEnd = $log[4];
+        $nextStart = $data[$i + 1][3];
+
+        // Skip if next log is invalid
+        if (strtotime($data[$i + 1][3]) >= strtotime($data[$i + 1][4])) {
+            continue;
+        }
+
+        // Insert only if there is a positive gap
+        if (
+            strtotime($currentEnd) < strtotime($nextStart)
+        ) {
+
+            $result[] = [
+                $log[0],          // log id
+                1,                // Off duty
+                "Off duty",
+                $currentEnd,
+                $nextStart,
+                $log[5],
+            ];
+        }
     }
 
     return $result;
@@ -12386,75 +12386,57 @@ function insertMissingLogs($data)
 
 function insertHOSMissingLogs($data)
 {
+    if (empty($data)) {
+        return [];
+    }
+
+    usort($data, function ($a, $b) {
+        return strtotime($a[4]) <=> strtotime($b[4]);
+    });
 
     $result = [];
 
-    for ($i = 0; $i < count($data) - 1; $i++) {
+    foreach ($data as $i => $log) {
 
-        // Add the current log to the result
+        $start = strtotime($log[4]);
+        $end = strtotime($log[5]);
 
-        $result[] = $data[$i];
-
-        // Check if the end_time of the current log matches the start_time of the next log
-
-        $currentEndTime = $data[$i][5]; // End time at index 5
-
-        $nextStartTime = $data[$i + 1][4]; // Start time at index 4
-
-        // If there's a mismatch, insert a new log
-        if ($currentEndTime !== $nextStartTime) {
-
-            // Calculate the duration between currentEndTime and nextStartTime
-
-            $start = DateTime::createFromFormat("h:i A", $currentEndTime);
-
-            $end = DateTime::createFromFormat("h:i A", $nextStartTime);
-
-            // Handle cases where the end time is on the next day
-            if ($end < $start) {
-
-                $end->modify("+1 day");
-            }
-
-            // Calculate the duration
-            $interval = $start->diff($end);
-
-            $duration = $interval->format("%H:%I:%S");
-
-            // Create the new log with the calculated duration
-            $newLog = [
-
-                $duration, // Calculated duration
-
-                "Off duty", // Same status
-
-                null, // Same null value
-
-                $data[$i][3], // Same location (A02)
-
-                $currentEndTime, // Start time is the end time of the current log
-
-                $nextStartTime, // End time is the start time of the next log
-
-                $data[$i][6], // Same GPS coordinates
-
-                $data[$i][7], // Same distance
-
-                $data[$i][8], // Same distance
-
-                $data[$i][9], // Same distance
-
-            ];
-
-            $result[] = $newLog; // Add the new log to the result
-
+        // Ignore invalid logs
+        if ($start >= $end) {
+            continue;
         }
-    }
 
-    // Add the last log
-    if (count($data) > 0) {
+        $result[] = $log;
 
-        $result[] = $data[count($data) - 1];
+        if (!isset($data[$i + 1])) {
+            continue;
+        }
+
+        $nextStart = strtotime($data[$i + 1][4]);
+
+        // Skip invalid next log
+        if (strtotime($data[$i + 1][4]) >= strtotime($data[$i + 1][5])) {
+            continue;
+        }
+
+        // Only insert if there is a real gap
+        if ($end < $nextStart) {
+
+            $duration = gmdate("H:i:s", $nextStart - $end);
+
+            $result[] = [
+                $duration,
+                "Off duty",
+                null,
+                $log[3],
+                date("h:i A", $end),
+                date("h:i A", $nextStart),
+                $log[6],
+                $log[7],
+                $log[8],
+                $log[9],
+            ];
+        }
     }
 
     return $result;
