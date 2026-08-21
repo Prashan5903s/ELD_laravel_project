@@ -1595,6 +1595,7 @@ function hod_log_mobile_time_data_edit(
 ) {
     $create = Carbon::parse($logStartTime);
     $last = Carbon::parse($logEndTime);
+    $currentTime = Carbon::parse($currentTime);
 
     if ($create->greaterThanOrEqualTo($last)) {
         throw new \Exception('Invalid log duration.');
@@ -1604,58 +1605,85 @@ function hod_log_mobile_time_data_edit(
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 1 : Delete logs completely inside edited range
+        | STEP 1
+        | Find every existing log which overlaps the new range.
+        |
+        | New range:
+        |       $create ---------------- $last
+        |
+        | Existing log can be:
+        |
+        | 1. Completely inside
+        | 2. Cover the complete new range
+        | 3. Overlap from left
+        | 4. Overlap from right
         |--------------------------------------------------------------------------
         */
-        DriverShiftLog::where('driver_id', $driverId)
-            ->where('start_log_time', '>=', $create)
-            ->where('end_log_time', '<=', $last)
-            ->delete();
 
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 2 : Reload remaining logs
-        |--------------------------------------------------------------------------
-        */
-        $driverLogs = DriverShiftLog::where('driver_id', $driverId)
+        $overlappingLogs = DriverShiftLog::where('driver_id', $driverId)
+            ->where('start_log_time', '<', $last)
+            ->where(function ($q) use ($create) {
+                $q->whereNull('end_log_time')
+                    ->orWhere('end_log_time', '>', $create);
+            })
             ->orderBy('start_log_time')
             ->get();
 
-        foreach ($driverLogs as $log) {
+        foreach ($overlappingLogs as $log) {
 
             $start = Carbon::parse($log->start_log_time);
 
             $end = $log->end_log_time
                 ? Carbon::parse($log->end_log_time)
-                : Carbon::parse($currentTime);
+                : $currentTime;
 
             /*
             |--------------------------------------------------------------------------
-            | Existing log covers new log completely
+            | CASE 1
+            | Existing log completely covers new log
+            |
+            | Existing:
+            | 00:00 ---------------- 12:00
+            |
+            | New:
+            |       03:00 ---- 09:00
+            |
+            | Result:
+            | 00:00 -- 03:00
+            | 03:00 -- 09:00  NEW
+            | 09:00 -- 12:00
             |--------------------------------------------------------------------------
             */
-            if ($start->lt($create) && $end->gt($last)) {
+
+            if (
+                $start->lt($create) &&
+                $end->gt($last)
+            ) {
 
                 $oldEnd = $end->copy();
 
-                // Left side
+                // Keep left part
                 $log->update([
                     'end_log_time' => $create,
                     'end_log_time_unix' => $create->timestamp,
                 ]);
 
-                // Right side
+                // Create right part
                 DriverShiftLog::create([
                     'driver_id' => $log->driver_id,
                     'vehicle_id' => $log->vehicle_id,
                     'current_shift_status' => $log->current_shift_status,
+
                     'start_log_time' => $last,
                     'end_log_time' => $oldEnd,
+
                     'start_log_time_unix' => $last->timestamp,
                     'end_log_time_unix' => $oldEnd->timestamp,
+
                     'location_name' => $log->location_name,
                     'location_end' => $log->location_end,
                     'notes' => $log->notes,
+
                     'system_entry' => $log->system_entry,
                     'is_add_approved' => $log->is_add_approved,
                 ]);
@@ -1665,9 +1693,21 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |--------------------------------------------------------------------------
-            | Overlap on right side
+            | CASE 2
+            | Existing log overlaps the LEFT side
+            |
+            | Existing:
+            | 00:00 -------- 05:00
+            |
+            | New:
+            |       03:00 -------- 09:00
+            |
+            | Result:
+            | 00:00 -- 03:00
+            | 03:00 -------- 09:00 NEW
             |--------------------------------------------------------------------------
             */
+
             if (
                 $start->lt($create) &&
                 $end->gt($create) &&
@@ -1684,9 +1724,21 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |--------------------------------------------------------------------------
-            | Overlap on left side
+            | CASE 3
+            | Existing log overlaps the RIGHT side
+            |
+            | Existing:
+            |       07:00 -------- 12:00
+            |
+            | New:
+            | 03:00 -------- 09:00
+            |
+            | Result:
+            | 03:00 -------- 09:00 NEW
+            |             09:00 -- 12:00
             |--------------------------------------------------------------------------
             */
+
             if (
                 $start->gte($create) &&
                 $start->lt($last) &&
@@ -1700,54 +1752,134 @@ function hod_log_mobile_time_data_edit(
 
                 continue;
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | CASE 4
+            | Existing log is completely inside new range
+            |
+            | Existing:
+            |       05:00 -- 07:00
+            |
+            | New:
+            | 03:00 ---------------- 09:00
+            |
+            | Existing log must be deleted.
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                $start->gte($create) &&
+                $end->lte($last)
+            ) {
+                $log->delete();
+
+                continue;
+            }
         }
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 3 : Insert new log
+        | STEP 2
+        | Remove any invalid logs before inserting new one.
         |--------------------------------------------------------------------------
         */
+
+        DriverShiftLog::where('driver_id', $driverId)
+            ->where(function ($q) {
+                $q->whereColumn(
+                    'start_log_time',
+                    '>=',
+                    'end_log_time'
+                )->orWhereColumn(
+                        'start_log_time_unix',
+                        '>=',
+                        'end_log_time_unix'
+                    );
+            })
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | STEP 3
+        | Remove exact duplicate of the log we are about to insert.
+        |--------------------------------------------------------------------------
+        */
+
+        DriverShiftLog::where('driver_id', $driverId)
+            ->where('vehicle_id', $vehicleId)
+            ->where('current_shift_status', $shiftId)
+            ->where('start_log_time', $create)
+            ->where('end_log_time', $last)
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | STEP 4
+        | Insert the new edited log.
+        |--------------------------------------------------------------------------
+        */
+
         DriverShiftLog::create([
             'driver_id' => $driverId,
             'vehicle_id' => $vehicleId,
             'current_shift_status' => $shiftId,
+
             'start_log_time' => $create,
             'end_log_time' => $last,
+
             'start_log_time_unix' => $create->timestamp,
             'end_log_time_unix' => $last->timestamp,
+
             'location_name' => $location,
             'location_end' => $location,
             'notes' => $notes,
+
             'system_entry' => 0,
             'is_add_approved' => 1,
         ]);
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 4 : Remove invalid logs
+        | STEP 5
+        | Final cleanup.
+        |
+        | Remove invalid logs and exact duplicates.
         |--------------------------------------------------------------------------
         */
+
         DriverShiftLog::where('driver_id', $driverId)
             ->where(function ($q) {
-                $q->whereColumn('start_log_time', '>=', 'end_log_time')
-                    ->orWhereColumn('start_log_time_unix', '>=', 'end_log_time_unix');
+                $q->whereColumn(
+                    'start_log_time',
+                    '>=',
+                    'end_log_time'
+                )->orWhereColumn(
+                        'start_log_time_unix',
+                        '>=',
+                        'end_log_time_unix'
+                    );
             })
             ->delete();
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 5 : Remove exact duplicate logs
+        | Remove exact duplicate ranges.
         |--------------------------------------------------------------------------
         */
+
         $logs = DriverShiftLog::where('driver_id', $driverId)
             ->orderBy('start_log_time')
+            ->orderBy('id')
             ->get();
 
         $seen = [];
 
         foreach ($logs as $log) {
 
-            $key = $log->current_shift_status . '_' .
+            $key =
+                $log->vehicle_id . '_' .
+                $log->current_shift_status . '_' .
                 $log->start_log_time . '_' .
                 $log->end_log_time;
 

@@ -742,7 +742,6 @@ class HOSMobileAPIController extends Controller
 
     public function mobile_hos_duty_status_log_edit_insert(Request $request)
     {
-
         if (!Auth::check()) {
 
             return response()->json([
@@ -755,14 +754,17 @@ class HOSMobileAPIController extends Controller
         try {
 
             $validated = $request->validate([
-
                 'log_date' => 'required|date',
+
                 'log_data' => 'required|array|min:1',
+
                 'log_data.*.vehicle_id' => 'required|integer',
                 'log_data.*.shift_id' => 'required|integer',
                 'log_data.*.log_id' => 'required|integer',
+
                 'log_data.*.edit_start' => 'required|date_format:H:i:s',
                 'log_data.*.edit_end' => 'required|date_format:H:i:s',
+
                 'log_data.*.location' => 'required|string|max:255',
                 'log_data.*.notes' => 'nullable|string|max:1000',
             ]);
@@ -777,67 +779,167 @@ class HOSMobileAPIController extends Controller
             ], 422);
         }
 
-        $driverId = Auth::id();
-        $logDate = $validated['log_date'];
+        try {
 
-        $user = Auth::user();
-        $masterId = $user->created_by;
+            $driverId = Auth::id();
 
-        $userInfo = UserInfo::where('user_id', $driverId)->first();
+            $logDate = $validated['log_date'];
 
-        if (!$userInfo) {
+            $user = Auth::user();
 
-            return response()->json([
-                'status' => 'failure',
-                'statusCode' => 404,
-                'message' => 'User information not found.'
-            ], 404);
-        }
+            $masterId = $user->created_by;
 
-        $timezone = $userInfo->home_terminal_timezone ?? config('app.timezone');
-        $currentTime = Carbon::now($timezone);
+            /*
+            |--------------------------------------------------------------------------
+            | Driver timezone
+            |--------------------------------------------------------------------------
+            */
 
-        $startTime = Carbon::parse($request->log_date)->startOfDay();
+            $userInfo = UserInfo::where('user_id', $driverId)->first();
 
-        $endTime = Carbon::parse($request->log_date)->endOfDay();
-
-        foreach ($validated['log_data'] as $log) {
-
-            $vehicleId = $log['vehicle_id'];
-            $shiftId = $log['shift_id'];
-            $location = $log['location'];
-            $notes = $log['notes'] ?? null;
-
-            $logStartTime = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
-            $logEndTime = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
-
-
-            $logStartTime = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
-            $logEndTime = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
-
-            // Don't allow invalid duration
-            if ($logStartTime->greaterThanOrEqualTo($logEndTime)) {
+            if (!$userInfo) {
 
                 return response()->json([
                     'status' => 'failure',
-                    'statusCode' => 422,
-                    'message' => 'Start time must be less than end time.',
-                    'errors' => [
-                        'log_data' => [
-                            "Start time ({$log['edit_start']}) must be earlier than end time ({$log['edit_end']})."
-                        ]
-                    ]
-                ], 422);
+                    'statusCode' => 404,
+                    'message' => 'User information not found.'
+                ], 404);
             }
 
-            $exist = check_hos_mobile_log_driver_exist(
-                $driverId,
-                $logStartTime,
-                $logEndTime,
-                $currentTime
+            $timezone = $userInfo->home_terminal_timezone
+                ?? config('app.timezone');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Current time
+            |--------------------------------------------------------------------------
+            */
+
+            $currentTime = Carbon::now($timezone);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Graph date range
+            |--------------------------------------------------------------------------
+            */
+
+            $startTime = Carbon::parse(
+                $logDate . ' 00:00:00',
+                $timezone
             );
 
-            if (!$exist['status']) {
+            $endTime = Carbon::parse(
+                $logDate . ' 23:59:59',
+                $timezone
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Process logs sequentially
+            |--------------------------------------------------------------------------
+            */
+
+            foreach ($validated['log_data'] as $index => $log) {
+
+                $vehicleId = $log['vehicle_id'];
+                $shiftId = $log['shift_id'];
+                $logId = $log['log_id'];
+
+                $location = $log['location'];
+                $notes = $log['notes'] ?? null;
+
+                /*
+                |--------------------------------------------------------------------------
+                | Parse start/end
+                |--------------------------------------------------------------------------
+                */
+
+                $logStartTime = Carbon::parse(
+                    $logDate . ' ' . $log['edit_start'],
+                    $timezone
+                );
+
+                $logEndTime = Carbon::parse(
+                    $logDate . ' ' . $log['edit_end'],
+                    $timezone
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Validate duration
+                |--------------------------------------------------------------------------
+                */
+
+                if ($logStartTime->greaterThanOrEqualTo($logEndTime)) {
+
+                    return response()->json([
+                        'status' => 'failure',
+                        'statusCode' => 422,
+                        'message' => 'Invalid log duration.',
+                        'errors' => [
+                            "log_data.$index.edit_start" => [
+                                "Start time ({$log['edit_start']}) must be earlier than end time ({$log['edit_end']})."
+                            ],
+                        ],
+                    ], 422);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Make sure requested log exists
+                |--------------------------------------------------------------------------
+                */
+
+                $existingLog = DriverShiftLog::where('id', $logId)
+                    ->where('driver_id', $driverId)
+                    ->first();
+
+                if (!$existingLog) {
+
+                    return response()->json([
+                        'status' => 'failure',
+                        'statusCode' => 404,
+                        'message' => "Log ID {$logId} not found for this driver.",
+                        'errors' => [
+                            "log_data.$index.log_id" => [
+                                "The selected log does not exist."
+                            ],
+                        ],
+                    ], 404);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Check if another log already has exactly the requested range.
+                |
+                | Exclude the log currently being edited.
+                |--------------------------------------------------------------------------
+                */
+
+                $duplicateLog = DriverShiftLog::where('driver_id', $driverId)
+                    ->where('id', '!=', $logId)
+                    ->where('start_log_time', $logStartTime)
+                    ->where('end_log_time', $logEndTime)
+                    ->first();
+
+                if ($duplicateLog) {
+
+                    /*
+                    |------------------------------------------------------------------
+                    | If exact same range already exists, remove the edited log.
+                    |------------------------------------------------------------------
+                    */
+
+                    $existingLog->delete();
+
+                    continue;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Edit the log
+                |--------------------------------------------------------------------------
+                */
 
                 hod_log_mobile_time_data_edit(
                     $driverId,
@@ -847,23 +949,66 @@ class HOSMobileAPIController extends Controller
                     $logEndTime,
                     $currentTime,
                     $location,
-                    $notes
+                    $notes,
+                    $logId
                 );
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Final cleanup
+            |--------------------------------------------------------------------------
+            */
+
+            DriverShiftLog::where('driver_id', $driverId)
+                ->where(function ($q) {
+
+                    $q->whereColumn(
+                        'start_log_time',
+                        '>=',
+                        'end_log_time'
+                    )
+                        ->orWhereColumn(
+                            'start_log_time_unix',
+                            '>=',
+                            'end_log_time_unix'
+                        );
+                })
+                ->delete();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Graph data
+            |--------------------------------------------------------------------------
+            */
+
+            $datas = mobile_graph_hos_chart(
+                $driverId,
+                $startTime,
+                $endTime,
+                $currentTime,
+                $masterId
+            );
+
+            $finalData = [
+                'graph_data' => $datas[0] ?? [],
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'statusCode' => 200,
+                'message' => 'All logs processed successfully.',
+                'data' => $finalData
+            ]);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 500,
+                'message' => 'Failed to process logs.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        DriverShiftLog::where('driver_id', $driverId)
-            ->whereColumn('start_log_time', '>=', 'end_log_time')
-            ->delete();
-
-        $datas = mobile_graph_hos_chart($driverId, $startTime, $endTime, $currentTime, $masterId);
-        $finalData['graph_data'] = $datas[0];
-
-        return response()->json([
-            'status' => 'success',
-            'statusCode' => 200,
-            'message' => 'All logs processed successfully.',
-            'data' => $finalData
-        ]);
     }
 }
