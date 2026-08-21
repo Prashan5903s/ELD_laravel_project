@@ -811,6 +811,25 @@ class HOSMobileAPIController extends Controller
             $logStartTime = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
             $logEndTime = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
 
+
+            $logStartTime = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
+            $logEndTime = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
+
+            // Don't allow invalid duration
+            if ($logStartTime->greaterThanOrEqualTo($logEndTime)) {
+
+                return response()->json([
+                    'status' => 'failure',
+                    'statusCode' => 422,
+                    'message' => 'Start time must be less than end time.',
+                    'errors' => [
+                        'log_data' => [
+                            "Start time ({$log['edit_start']}) must be earlier than end time ({$log['edit_end']})."
+                        ]
+                    ]
+                ], 422);
+            }
+
             $exist = check_hos_mobile_log_driver_exist(
                 $driverId,
                 $logStartTime,

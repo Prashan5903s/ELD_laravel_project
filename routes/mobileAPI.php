@@ -96,8 +96,6 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::post('setting/mobile/cycle/rule/data/update', [SettingMobileAPIController::class, 'setting_cycle_rule_update']);
 
-
-
     Route::resource('user/data/notification', NotificationMobileAPIController::class);
 
     Route::resource('group/mobile/data', GroupMobileApiController::class)

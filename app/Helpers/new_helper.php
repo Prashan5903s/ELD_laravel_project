@@ -1575,6 +1575,10 @@ function hod_log_mobile_time_data_edit(
     $create = Carbon::parse($logStartTime);
     $last = Carbon::parse($logEndTime);
 
+    if ($create->greaterThanOrEqualTo($last)) {
+        throw new \Exception('Invalid log duration. Start time must be less than end time.');
+    }
+
     DB::transaction(function () use ($driverId, $vehicleId, $shiftId, $create, $last, $currentTime, $location, $notes) {
 
         $driverLogs = DriverShiftLog::where('driver_id', $driverId)
@@ -1589,17 +1593,12 @@ function hod_log_mobile_time_data_edit(
                 ? Carbon::parse($log->end_log_time)
                 : Carbon::parse($currentTime);
 
-            // -------------------------
-            // Case 1 : Completely inside
-            // -------------------------
             if ($start >= $create && $end <= $last) {
+
                 $log->delete();
                 continue;
             }
 
-            // -------------------------
-            // Case 2 : Existing log covers whole range
-            // -------------------------
             if ($start < $create && $end > $last) {
 
                 $oldEnd = clone $end;
@@ -1627,9 +1626,6 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
-            // -------------------------
-            // Case 3 : Overlap at end
-            // -------------------------
             if ($start < $create && $end > $create && $end <= $last) {
 
                 $log->update([
@@ -1640,9 +1636,6 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
-            // -------------------------
-            // Case 4 : Overlap at start
-            // -------------------------
             if ($start >= $create && $start < $last && $end > $last) {
 
                 $log->update([
@@ -1654,9 +1647,6 @@ function hod_log_mobile_time_data_edit(
             }
         }
 
-        // -----------------------------------
-        // Insert the edited log
-        // -----------------------------------
         DriverShiftLog::create([
             'driver_id' => $driverId,
             'vehicle_id' => $vehicleId,
@@ -1670,14 +1660,15 @@ function hod_log_mobile_time_data_edit(
             'notes' => $notes,
         ]);
 
-        // -----------------------------------
-        // Delete invalid logs where start and end time are equal
-        // -----------------------------------
         DriverShiftLog::where('driver_id', $driverId)
             ->where(function ($query) {
                 $query->whereColumn('start_log_time', 'end_log_time')
                     ->orWhereColumn('start_log_time_unix', 'end_log_time_unix');
             })
+            ->delete();
+
+        DriverShiftLog::where('driver_id', $driverId)
+            ->whereColumn('start_log_time', '>=', 'end_log_time')
             ->delete();
     });
 

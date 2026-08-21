@@ -85,7 +85,9 @@ class HOSDetailAPIController extends Controller
         return response()->json($data);
     }
 
-    public function driver_hos_detail_page() {}
+    public function driver_hos_detail_page()
+    {
+    }
 
     /**
      * Show the form for creating a new resource.
