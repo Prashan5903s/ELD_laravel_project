@@ -1576,7 +1576,7 @@ function hod_log_mobile_time_data_edit(
     $last = Carbon::parse($logEndTime);
 
     if ($create->greaterThanOrEqualTo($last)) {
-        throw new \Exception('Invalid log duration. Start time must be less than end time.');
+        throw new \Exception('Invalid log duration.');
     }
 
     DB::transaction(function () use ($driverId, $vehicleId, $shiftId, $create, $last, $currentTime, $location, $notes) {
@@ -1593,60 +1593,92 @@ function hod_log_mobile_time_data_edit(
                 ? Carbon::parse($log->end_log_time)
                 : Carbon::parse($currentTime);
 
-            if ($start >= $create && $end <= $last) {
-
+            /*
+             * Existing log completely inside new range
+             */
+            if ($start->gte($create) && $end->lte($last)) {
                 $log->delete();
                 continue;
             }
 
-            if ($start < $create && $end > $last) {
+            /*
+             * Existing log fully covers new range
+             */
+            if ($start->lt($create) && $end->gt($last)) {
 
-                $oldEnd = clone $end;
+                $oldEnd = $end->copy();
 
-                // Update first half
-                $log->update([
-                    'end_log_time' => $create,
-                    'end_log_time_unix' => $create->timestamp,
-                ]);
+                // Left piece
+                if ($start->lt($create)) {
 
-                // Create second half
-                DriverShiftLog::create([
-                    'driver_id' => $log->driver_id,
-                    'vehicle_id' => $log->vehicle_id,
-                    'current_shift_status' => $log->current_shift_status,
-                    'start_log_time' => $last,
-                    'end_log_time' => $oldEnd,
-                    'start_log_time_unix' => $last->timestamp,
-                    'end_log_time_unix' => $oldEnd->timestamp,
-                    'location_name' => $log->location_name,
-                    'location_end' => $log->location_end,
-                    'notes' => $log->notes,
-                ]);
+                    $log->update([
+                        'end_log_time' => $create,
+                        'end_log_time_unix' => $create->timestamp,
+                    ]);
+                }
+
+                // Right piece
+                if ($last->lt($oldEnd)) {
+
+                    DriverShiftLog::create([
+                        'driver_id' => $log->driver_id,
+                        'vehicle_id' => $log->vehicle_id,
+                        'current_shift_status' => $log->current_shift_status,
+                        'start_log_time' => $last,
+                        'end_log_time' => $oldEnd,
+                        'start_log_time_unix' => $last->timestamp,
+                        'end_log_time_unix' => $oldEnd->timestamp,
+                        'location_name' => $log->location_name,
+                        'location_end' => $log->location_end,
+                        'notes' => $log->notes,
+                    ]);
+                }
 
                 continue;
             }
 
-            if ($start < $create && $end > $create && $end <= $last) {
+            /*
+             * Overlap at end
+             */
+            if ($start->lt($create) && $end->gt($create) && $end->lte($last)) {
 
-                $log->update([
-                    'end_log_time' => $create,
-                    'end_log_time_unix' => $create->timestamp,
-                ]);
+                if ($start->lt($create)) {
+
+                    $log->update([
+                        'end_log_time' => $create,
+                        'end_log_time_unix' => $create->timestamp,
+                    ]);
+                } else {
+
+                    $log->delete();
+                }
 
                 continue;
             }
 
-            if ($start >= $create && $start < $last && $end > $last) {
+            /*
+             * Overlap at beginning
+             */
+            if ($start->gte($create) && $start->lt($last) && $end->gt($last)) {
 
-                $log->update([
-                    'start_log_time' => $last,
-                    'start_log_time_unix' => $last->timestamp,
-                ]);
+                if ($last->lt($end)) {
+
+                    $log->update([
+                        'start_log_time' => $last,
+                        'start_log_time_unix' => $last->timestamp,
+                    ]);
+                } else {
+
+                    $log->delete();
+                }
 
                 continue;
             }
         }
 
+        /*
+         * Insert new log
+         */
         DriverShiftLog::create([
             'driver_id' => $driverId,
             'vehicle_id' => $vehicleId,
@@ -1660,15 +1692,14 @@ function hod_log_mobile_time_data_edit(
             'notes' => $notes,
         ]);
 
+        /*
+         * Final cleanup
+         */
         DriverShiftLog::where('driver_id', $driverId)
-            ->where(function ($query) {
-                $query->whereColumn('start_log_time', 'end_log_time')
-                    ->orWhereColumn('start_log_time_unix', 'end_log_time_unix');
+            ->where(function ($q) {
+                $q->whereColumn('start_log_time', '>=', 'end_log_time')
+                    ->orWhereColumn('start_log_time_unix', '>=', 'end_log_time_unix');
             })
-            ->delete();
-
-        DriverShiftLog::where('driver_id', $driverId)
-            ->whereColumn('start_log_time', '>=', 'end_log_time')
             ->delete();
     });
 
