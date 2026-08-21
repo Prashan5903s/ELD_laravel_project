@@ -827,6 +827,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
 
             $endTimeFormatted = Carbon::parse($last)->format("H:i:s");
 
+            if ($create->greaterThanOrEqualTo($last)) {
+                continue;
+            }
+
 
             if ($startTimeFormatted != $endTimeFormatted) {
 
@@ -846,6 +850,14 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                 ];
             }
         }
+
+        $datass = array_values(array_filter($datass, function ($log) {
+
+            $start = Carbon::parse($log['start_log_time']);
+            $end = Carbon::parse($log['end_log_time']);
+
+            return $start->lt($end);
+        }));
 
         $datass = mobile_insertMissingLogs($datass);
 
