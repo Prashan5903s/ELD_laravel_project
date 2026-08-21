@@ -21,7 +21,6 @@ use App\Http\Controllers\Mobile\API\DOTInspectionMobileAPIController;
 use App\Http\Controllers\Mobile\API\HOSUnsignedLogMobileAPIController;
 use App\Http\Controllers\Mobile\API\InspectionReportMobileAPIController;
 use App\Http\Controllers\Mobile\API\UserDeviceAPIController;
-use Illuminate\Http\Request;
 
 // Public routes
 Route::post('user/mobile/login', [LoginMobileAPIController::class, 'mobile_login']);
@@ -56,6 +55,8 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
     Route::get('hos/mobile/data/test/{start}/{end}', [HOSMobileAPIController::class, 'hos_mobile_test_data'])->name('hos.data.mobile.test');
 
     Route::get('hos/mobile/graph/data/{date}', [HOSMobileAPIController::class, 'graph_hos_chart_data']);
+
+    Route::post("hos/mobile/graph/log/edit", [HOSMobileAPIController::class, "mobile_hos_duty_status_log_edit_insert"]);
 
     Route::resource('document/mobile/data', DocumentMobileAPIController::class);
 
@@ -94,6 +95,8 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
     Route::get('setting/mobile/cycle/rule/data', [SettingMobileAPIController::class, 'setting_cycle_rule_data']);
 
     Route::post('setting/mobile/cycle/rule/data/update', [SettingMobileAPIController::class, 'setting_cycle_rule_update']);
+
+
 
     Route::resource('user/data/notification', NotificationMobileAPIController::class);
 

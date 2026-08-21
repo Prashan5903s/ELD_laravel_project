@@ -740,169 +740,107 @@ class HOSMobileAPIController extends Controller
         }
     }
 
+    public function mobile_hos_duty_status_log_edit_insert(Request $request)
+    {
+
+        if (!Auth::check()) {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 401,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        try {
+
+            $validated = $request->validate([
+
+                'log_date' => 'required|date',
+                'log_data' => 'required|array|min:1',
+                'log_data.*.vehicle_id' => 'required|integer',
+                'log_data.*.shift_id' => 'required|integer',
+                'log_data.*.log_id' => 'required|integer',
+                'log_data.*.edit_start' => 'required|date_format:H:i:s',
+                'log_data.*.edit_end' => 'required|date_format:H:i:s',
+                'log_data.*.location' => 'required|string|max:255',
+                'log_data.*.notes' => 'nullable|string|max:1000',
+            ]);
+
+        } catch (ValidationException $e) {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 422,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        $driverId = Auth::id();
+        $logDate = $validated['log_date'];
+
+        $user = Auth::user();
+        $masterId = $user->created_by;
+
+        $userInfo = UserInfo::where('user_id', $driverId)->first();
+
+        if (!$userInfo) {
+
+            return response()->json([
+                'status' => 'failure',
+                'statusCode' => 404,
+                'message' => 'User information not found.'
+            ], 404);
+        }
+
+        $timezone = $userInfo->home_terminal_timezone ?? config('app.timezone');
+        $currentTime = Carbon::now($timezone);
+
+        $startTime = Carbon::parse($request->log_date)->startOfDay();
+
+        $endTime = Carbon::parse($request->log_date)->endOfDay();
+
+        foreach ($validated['log_data'] as $log) {
+
+            $vehicleId = $log['vehicle_id'];
+            $shiftId = $log['shift_id'];
+            $location = $log['location'];
+            $notes = $log['notes'] ?? null;
+
+            $logStartTime = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
+            $logEndTime = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
+
+            $exist = check_hos_mobile_log_driver_exist(
+                $driverId,
+                $logStartTime,
+                $logEndTime,
+                $currentTime
+            );
+
+            if (!$exist['status']) {
+
+                hod_log_mobile_time_data_edit(
+                    $driverId,
+                    $vehicleId,
+                    $shiftId,
+                    $logStartTime,
+                    $logEndTime,
+                    $currentTime,
+                    $location,
+                    $notes
+                );
+            }
+        }
+
+        $datas = mobile_graph_hos_chart($driverId, $startTime, $endTime, $currentTime, $masterId);
+        $finalData['graph_data'] = $datas[0];
+
+        return response()->json([
+            'status' => 'success',
+            'statusCode' => 200,
+            'message' => 'All logs processed successfully.',
+            'data' => $finalData
+        ]);
+    }
 }
-
-// <?php
-// namespace App\Http\Controllers\Mobile\API;
-
-// use App\Http\Controllers\Controller;
-// use App\Models\Device;
-// use App\Models\DriverShiftLog;
-// use App\Models\RuleAssign;
-// use App\Models\User;
-// use App\Models\UserInfo;
-// use Carbon\Carbon;
-// use App\Models\VehicleAssign;
-// use App\Models\Vehicle;
-// use App\Models\VehicleLogHistory;
-// use App\Models\BluetoothLogData;
-// use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Auth;
-// use Illuminate\Support\Facades\Validator;
-// use Illuminate\Validation\ValidationException;
-
-// class HOSMobileAPIController extends Controller
-// {
-
-//     public function hos_mobile_data($start, $end)
-//     {
-
-//         $auth = Auth::check();
-
-//         $datas = [];
-
-//         if ($auth) {
-
-//             $user = Auth::user();
-
-//             $id = $user->id;
-
-//             $datas = hos_date_data($id, $start, $end);
-
-//             $data = [
-//                 'status' => 'success',
-//                 'statusCode' => 200,
-//                 'message' => 'Data fetched successfully',
-//                 'log_data' => $datas,
-//             ];
-//         } else {
-
-//             $data = [
-//                 'status' => 'success',
-//                 'statusCode' => 401,
-//                 'message' => 'Not authenticated',
-//             ];
-//         }
-
-//         return response()->json($data, $data['statusCode']);
-//     }
-//     public function hos_mobile_test_data($start, $end)
-//     {
-
-//         $auth = Auth::check();
-
-//         $datas = [];
-
-//         if ($auth) {
-
-//             $user = Auth::user();
-
-//             $id = $user->id;
-
-//             $datas = hos_date_data_test($id, $start, $end);
-
-//             $data = [
-//                 'status' => 'success',
-//                 'statusCode' => 200,
-//                 'message' => 'Data fetched successfully',
-//                 'log_data' => $datas,
-//             ];
-//         } else {
-
-//             $data = [
-//                 'status' => 'success',
-//                 'statusCode' => 401,
-//                 'message' => 'Not authenticated',
-//             ];
-//         }
-
-//         return response()->json($data, $data['statusCode']);
-//     }
-
-//     public function graph_hos_chart_data($date)
-//     {
-
-//         $auth = Auth::check();
-
-//         if ($auth) {
-
-//             $user = Auth::user();
-
-//             $id = $user->id;
-
-//             $startTime = Carbon::parse($date)->startOfDay();
-
-//             $endTime = Carbon::parse($date)->endOfDay();
-
-//             $userInfo = UserInfo::where('user_id', $id)->first();
-
-//             $timezone = $userInfo->home_terminal_timezone;
-
-//             $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
-
-//             $currentTime = Carbon::parse($currentTime);
-
-//             $datas = graph_hos_chart($id, $startTime, $endTime, $currentTime);
-
-//             if ($datas && count($datas) >= 3) {
-
-//                 $finalData['graph_data'] = $datas[0];
-
-//                 $distinctVehicle = [];
-
-//                 if (!empty($finalData['graph_data']) && count($finalData['graph_data']) > 0) {
-
-//                     foreach ($finalData['graph_data'] as $veh) {
-
-//                         $name = $veh[5];
-
-//                         // Check if name already exists in the array
-//                         $exists = collect($distinctVehicle)->contains('name', $name);
-
-//                         if (!$exists) {
-
-//                             $distinctVehicle[] = ['name' => $name];
-//                         }
-//                     }
-//                 }
-
-//                 $finalData['vehicle'] = $distinctVehicle;
-
-//                 $finalData['violation_data'] = $datas[2];
-
-//                 $data = [
-//                     'status' => 'success',
-//                     'statusCode' => 200,
-//                     'message' => 'Data fetched successfully',
-//                     'data' => $finalData,
-//                 ];
-//             } else {
-
-//                 $data = [
-//                     'status' => 'failure',
-//                     'statusCode' => 403,
-//                     'message' => 'Data does not exist',
-//                 ];
-//             }
-//         } else {
-
-//             $data = [
-//                 'status' => 'success',
-//                 'statusCode' => 401,
-//                 'message' => 'Not authenticated',
-//             ];
-//         }
-
-//         return response()->json($data, $data['statusCode']);
-//     }
-// }

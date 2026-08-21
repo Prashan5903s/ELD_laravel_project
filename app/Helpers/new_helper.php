@@ -10,6 +10,7 @@ use App\Models\DriverShiftLog;
 use App\Models\Inspection;
 use App\Models\Vehicle;
 use App\Models\ListOption;
+use Illuminate\Support\Facades\DB;
 
 if (!function_exists('send_message_whatsApp')) {
 
@@ -1466,4 +1467,221 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
         $endDateLocationName,
         $engineHourFinal,
     ];
+}
+
+
+function check_hos_mobile_log_driver_exist(
+    $driverId,
+    $logStartTime,
+    $logEndTime,
+    $currentTime,
+) {
+
+    $data = [];
+
+    $create = Carbon::parse($logStartTime);
+    $last = Carbon::parse($logEndTime);
+
+    // Get user's timezone
+    $userInfo = UserInfo::where("user_id", $driverId)->first();
+    $timezone = $userInfo->home_terminal_timezone;
+
+    $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
+    $currentTime = Carbon::parse($currentTime);
+
+    $checkLog = DriverShiftLog::where("driver_id", $driverId)
+        ->where("is_add_approved", 1)
+        ->where(function ($query) use ($create, $last, $currentTime) {
+            $query
+                ->where(function ($q) use ($create, $currentTime) {
+                    $q->where("start_log_time", "<", $create)
+                        ->whereRaw(
+                            "(CASE WHEN end_log_time IS NULL THEN ? ELSE end_log_time END) > ?",
+                            [$currentTime, $create]
+                        );
+                })
+                ->orWhere(function ($q) use ($last, $currentTime) {
+                    $q->where("start_log_time", "<", $last)
+                        ->whereRaw(
+                            "(CASE WHEN end_log_time IS NULL THEN ? ELSE end_log_time END) > ?",
+                            [$currentTime, $last]
+                        );
+                })
+                ->orWhere(function ($q) use ($create, $currentTime) {
+                    $q->where("start_log_time", ">", $create)
+                        ->whereRaw(
+                            "(CASE WHEN end_log_time IS NULL THEN ? ELSE end_log_time END) > ?",
+                            [$currentTime, $create]
+                        );
+                });
+        })
+        ->orderBy("start_log_time", "DESC")
+        ->get();
+
+    // Find the nearest log before the create time
+    $beforeLog = DriverShiftLog::where("driver_id", $driverId)
+        ->where("is_add_approved", 1)
+        ->where("end_log_time", "<=", $create)
+        ->orderBy("end_log_time", "DESC")
+        ->first();
+
+    // Find the nearest log after the last time
+    $afterLog = DriverShiftLog::where("driver_id", $driverId)
+        ->where("is_add_approved", 1)
+        ->where("start_log_time", ">=", $last)
+        ->orderBy("start_log_time", "ASC")
+        ->first();
+
+    if ($checkLog && count($checkLog) > 0) {
+
+        $exists = $checkLog->contains(function ($log) {
+            return $log->current_shift_status == 3 &&
+                $log->system_entry == 1 &&
+                $log->is_add_approved == 1;
+        });
+
+        $data = [
+            "exists" => true,
+            "status" => $exists,
+            "log" => $checkLog,
+            "beforeLog" => $beforeLog,
+            "afterLog" => $afterLog,
+        ];
+
+    } else {
+
+        $data = [
+            "exists" => false,
+            "status" => false,
+            "log" => null,
+            "beforeLog" => $beforeLog,
+            "afterLog" => $afterLog,
+        ];
+
+    }
+
+    return $data;
+}
+
+function hod_log_mobile_time_data_edit(
+    $driverId,
+    $vehicleId,
+    $shiftId,
+    $logStartTime,
+    $logEndTime,
+    $currentTime,
+    $location,
+    $notes
+) {
+
+    $create = Carbon::parse($logStartTime);
+    $last = Carbon::parse($logEndTime);
+
+    DB::transaction(function () use ($driverId, $vehicleId, $shiftId, $create, $last, $currentTime, $location, $notes) {
+
+        $driverLogs = DriverShiftLog::where('driver_id', $driverId)
+            ->orderBy('start_log_time')
+            ->get();
+
+        foreach ($driverLogs as $log) {
+
+            $start = Carbon::parse($log->start_log_time);
+
+            $end = $log->end_log_time
+                ? Carbon::parse($log->end_log_time)
+                : Carbon::parse($currentTime);
+
+            // -------------------------
+            // Case 1 : Completely inside
+            // -------------------------
+            if ($start >= $create && $end <= $last) {
+                $log->delete();
+                continue;
+            }
+
+            // -------------------------
+            // Case 2 : Existing log covers whole range
+            // -------------------------
+            if ($start < $create && $end > $last) {
+
+                $oldEnd = clone $end;
+
+                // Update first half
+                $log->update([
+                    'end_log_time' => $create,
+                    'end_log_time_unix' => $create->timestamp,
+                ]);
+
+                // Create second half
+                DriverShiftLog::create([
+                    'driver_id' => $log->driver_id,
+                    'vehicle_id' => $log->vehicle_id,
+                    'current_shift_status' => $log->current_shift_status,
+                    'start_log_time' => $last,
+                    'end_log_time' => $oldEnd,
+                    'start_log_time_unix' => $last->timestamp,
+                    'end_log_time_unix' => $oldEnd->timestamp,
+                    'location_name' => $log->location_name,
+                    'location_end' => $log->location_end,
+                    'notes' => $log->notes,
+                ]);
+
+                continue;
+            }
+
+            // -------------------------
+            // Case 3 : Overlap at end
+            // -------------------------
+            if ($start < $create && $end > $create && $end <= $last) {
+
+                $log->update([
+                    'end_log_time' => $create,
+                    'end_log_time_unix' => $create->timestamp,
+                ]);
+
+                continue;
+            }
+
+            // -------------------------
+            // Case 4 : Overlap at start
+            // -------------------------
+            if ($start >= $create && $start < $last && $end > $last) {
+
+                $log->update([
+                    'start_log_time' => $last,
+                    'start_log_time_unix' => $last->timestamp,
+                ]);
+
+                continue;
+            }
+        }
+
+        // -----------------------------------
+        // Insert the edited log
+        // -----------------------------------
+        DriverShiftLog::create([
+            'driver_id' => $driverId,
+            'vehicle_id' => $vehicleId,
+            'current_shift_status' => $shiftId,
+            'start_log_time' => $create,
+            'end_log_time' => $last,
+            'start_log_time_unix' => $create->timestamp,
+            'end_log_time_unix' => $last->timestamp,
+            'location_name' => $location,
+            'location_end' => $location,
+            'notes' => $notes,
+        ]);
+
+        // -----------------------------------
+        // Delete invalid logs where start and end time are equal
+        // -----------------------------------
+        DriverShiftLog::where('driver_id', $driverId)
+            ->where(function ($query) {
+                $query->whereColumn('start_log_time', 'end_log_time')
+                    ->orWhereColumn('start_log_time_unix', 'end_log_time_unix');
+            })
+            ->delete();
+    });
+
+    return true;
 }

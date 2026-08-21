@@ -129,7 +129,6 @@ Route::post('reset/change/password/{token}', [UserApiController::class, 'check_r
 Route::middleware(['api-acess', 'throttle:300,1'])->group(function () {
 
 
-
     Route::post('user/post/login', [UserApiController::class, 'login']);
 
 
