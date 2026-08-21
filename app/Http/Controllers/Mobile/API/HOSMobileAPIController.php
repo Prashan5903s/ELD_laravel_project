@@ -14,6 +14,7 @@ use App\Models\VehicleAssign;
 use App\Models\VehicleLogHistory;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -755,19 +756,13 @@ class HOSMobileAPIController extends Controller
 
             $validated = $request->validate([
                 'log_date' => 'required|date',
-
                 'log_data' => 'required|array|min:1',
-
                 'log_data.*.vehicle_id' => 'required|integer',
                 'log_data.*.shift_id' => 'required|integer',
-
-                // Can remain because frontend is sending it,
-                // but it is not used for the edit logic.
+                // Not used for edit logic
                 'log_data.*.log_id' => 'nullable|integer',
-
                 'log_data.*.edit_start' => 'required|date_format:H:i:s',
                 'log_data.*.edit_end' => 'required|date_format:H:i:s',
-
                 'log_data.*.location' => 'required|string|max:255',
                 'log_data.*.notes' => 'nullable|string|max:1000',
             ]);
@@ -792,12 +787,6 @@ class HOSMobileAPIController extends Controller
 
             $masterId = $user->created_by;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Driver timezone
-            |--------------------------------------------------------------------------
-            */
-
             $userInfo = UserInfo::where('user_id', $driverId)->first();
 
             if (!$userInfo) {
@@ -812,19 +801,7 @@ class HOSMobileAPIController extends Controller
             $timezone = $userInfo->home_terminal_timezone
                 ?? config('app.timezone');
 
-            /*
-            |--------------------------------------------------------------------------
-            | Current time
-            |--------------------------------------------------------------------------
-            */
-
             $currentTime = Carbon::now($timezone);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Graph date range
-            |--------------------------------------------------------------------------
-            */
 
             $startTime = Carbon::parse(
                 $logDate . ' 00:00:00',
@@ -836,101 +813,63 @@ class HOSMobileAPIController extends Controller
                 $timezone
             );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Process every submitted log in order
-            |--------------------------------------------------------------------------
-            */
+            DB::transaction(function () use ($validated, $driverId, $logDate, $timezone, $currentTime) {
 
-            foreach ($validated['log_data'] as $index => $log) {
+                foreach ($validated['log_data'] as $index => $log) {
 
-                $vehicleId = $log['vehicle_id'];
-                $shiftId = $log['shift_id'];
+                    $vehicleId = $log['vehicle_id'];
+                    $shiftId = $log['shift_id'];
 
-                $location = $log['location'];
-                $notes = $log['notes'] ?? null;
+                    $location = $log['location'];
+                    $notes = $log['notes'] ?? null;
 
-                /*
-                |--------------------------------------------------------------------------
-                | Parse start/end
-                |--------------------------------------------------------------------------
-                */
+                    $logStartTime = Carbon::parse(
+                        $logDate . ' ' . $log['edit_start'],
+                        $timezone
+                    );
 
-                $logStartTime = Carbon::parse(
-                    $logDate . ' ' . $log['edit_start'],
-                    $timezone
-                );
+                    $logEndTime = Carbon::parse(
+                        $logDate . ' ' . $log['edit_end'],
+                        $timezone
+                    );
 
-                $logEndTime = Carbon::parse(
-                    $logDate . ' ' . $log['edit_end'],
-                    $timezone
-                );
+                    if ($logStartTime->greaterThanOrEqualTo($logEndTime)) {
 
-                /*
-                |--------------------------------------------------------------------------
-                | Validate duration
-                |--------------------------------------------------------------------------
-                */
+                        throw new \Exception(
+                            "Invalid log duration at log_data.$index. " .
+                            "Start time ({$log['edit_start']}) must be earlier " .
+                            "than end time ({$log['edit_end']})."
+                        );
+                    }
 
-                if ($logStartTime->greaterThanOrEqualTo($logEndTime)) {
-
-                    return response()->json([
-                        'status' => 'failure',
-                        'statusCode' => 422,
-                        'message' => 'Invalid log duration.',
-                        'errors' => [
-                            "log_data.$index" => [
-                                "Start time ({$log['edit_start']}) must be earlier than end time ({$log['edit_end']})."
-                            ],
-                        ],
-                    ], 422);
+                    hod_log_mobile_time_data_edit(
+                        $driverId,
+                        $vehicleId,
+                        $shiftId,
+                        $logStartTime,
+                        $logEndTime,
+                        $currentTime,
+                        $location,
+                        $notes
+                    );
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Edit based ONLY on time range
-                |--------------------------------------------------------------------------
-                */
+                DriverShiftLog::where('driver_id', $driverId)
+                    ->where(function ($q) {
 
-                hod_log_mobile_time_data_edit(
-                    $driverId,
-                    $vehicleId,
-                    $shiftId,
-                    $logStartTime,
-                    $logEndTime,
-                    $currentTime,
-                    $location,
-                    $notes
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Final invalid-log cleanup
-            |--------------------------------------------------------------------------
-            */
-
-            DriverShiftLog::where('driver_id', $driverId)
-                ->where(function ($q) {
-
-                    $q->whereColumn(
-                        'start_log_time',
-                        '>=',
-                        'end_log_time'
-                    )
-                        ->orWhereColumn(
-                            'start_log_time_unix',
+                        $q->whereColumn(
+                            'start_log_time',
                             '>=',
-                            'end_log_time_unix'
-                        );
-                })
-                ->delete();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Graph data
-            |--------------------------------------------------------------------------
-            */
+                            'end_log_time'
+                        )
+                            ->orWhereColumn(
+                                'start_log_time_unix',
+                                '>=',
+                                'end_log_time_unix'
+                            );
+                    })
+                    ->delete();
+            });
 
             $datas = mobile_graph_hos_chart(
                 $driverId,

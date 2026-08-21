@@ -1603,14 +1603,28 @@ function hod_log_mobile_time_data_edit(
 
     DB::transaction(function () use ($driverId, $vehicleId, $shiftId, $create, $last, $currentTime, $location, $notes) {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Find logs overlapping the edited range
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | Existing: 00:00 → 04:00
+        | Edited:   01:00 → 09:00
+        |
+        | Existing overlaps edited range.
+        |
+        */
+
         $existingLogs = DriverShiftLog::where('driver_id', $driverId)
             ->where('vehicle_id', $vehicleId)
             ->where('start_log_time', '<', $last)
-            ->where(function ($q) use ($create) {
-                $q->whereNull('end_log_time')
+            ->where(function ($query) use ($create) {
+                $query->whereNull('end_log_time')
                     ->orWhere('end_log_time', '>', $create);
             })
-            ->orderBy('start_log_time')
+            ->orderBy('start_log_time', 'asc')
             ->get();
 
         foreach ($existingLogs as $existingLog) {
@@ -1623,6 +1637,20 @@ function hod_log_mobile_time_data_edit(
                 ? Carbon::parse($existingLog->end_log_time)
                 : $currentTime;
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | CASE 1
+            |
+            | Existing log is completely inside edited range.
+            |
+            | Existing: 04:00 → 06:00
+            | Edited:   01:00 → 09:00
+            |
+            | DELETE EXISTING
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 $existingStart->gte($create) &&
                 $existingEnd->lte($last)
@@ -1632,6 +1660,22 @@ function hod_log_mobile_time_data_edit(
 
                 continue;
             }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | CASE 2
+            |
+            | Edited START is inside existing log
+            | AND edited END is after existing END.
+            |
+            | Existing: 00:00 → 04:00
+            | Edited:   01:00 → 09:00
+            |
+            | Result:
+            | Existing: 00:00 → 01:00
+            |--------------------------------------------------------------------------
+            */
 
             if (
                 $create->gt($existingStart) &&
@@ -1647,6 +1691,22 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | CASE 3
+            |
+            | Edited END is inside existing log
+            | AND edited START is before existing START.
+            |
+            | Existing: 06:00 → 12:00
+            | Edited:   01:00 → 09:00
+            |
+            | Result:
+            | Existing: 09:00 → 12:00
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 $last->gt($existingStart) &&
                 $last->lt($existingEnd) &&
@@ -1661,6 +1721,20 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | CASE 4
+            |
+            | Edited range completely covers existing range.
+            |
+            | Existing: 04:00 → 08:00
+            | Edited:   01:00 → 09:00
+            |
+            | DELETE EXISTING
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 $create->lte($existingStart) &&
                 $last->gte($existingEnd)
@@ -1671,6 +1745,13 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check exact same range
+        |--------------------------------------------------------------------------
+        */
 
         $sameLog = DriverShiftLog::where('driver_id', $driverId)
             ->where('vehicle_id', $vehicleId)
@@ -1690,6 +1771,13 @@ function hod_log_mobile_time_data_edit(
 
             return;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Insert edited log
+        |--------------------------------------------------------------------------
+        */
 
         DriverShiftLog::create([
             'driver_id' => $driverId,
