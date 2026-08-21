@@ -1607,14 +1607,6 @@ function hod_log_mobile_time_data_edit(
         |--------------------------------------------------------------------------
         | Find logs overlapping the edited range
         |--------------------------------------------------------------------------
-        |
-        | Example:
-        |
-        | Existing: 00:00 → 04:00
-        | Edited:   01:00 → 09:00
-        |
-        | Existing overlaps edited range.
-        |
         */
 
         $existingLogs = DriverShiftLog::where('driver_id', $driverId)
@@ -1629,56 +1621,47 @@ function hod_log_mobile_time_data_edit(
 
         foreach ($existingLogs as $existingLog) {
 
-            $existingStart = Carbon::parse(
-                $existingLog->start_log_time
-            );
+            $existingStart = Carbon::parse($existingLog->start_log_time);
 
             $existingEnd = $existingLog->end_log_time
                 ? Carbon::parse($existingLog->end_log_time)
                 : $currentTime;
 
-
             /*
-            |--------------------------------------------------------------------------
-            | CASE 1
+            |----------------------------------------------------------------
+            | RULE A
             |
-            | Existing log is completely inside edited range.
+            | Existing log fully inside edited range.
             |
-            | Existing: 04:00 → 06:00
-            | Edited:   01:00 → 09:00
+            | Existing: 04:00 -> 06:00
+            | Edited:   01:00 -> 09:00
             |
             | DELETE EXISTING
-            |--------------------------------------------------------------------------
+            |----------------------------------------------------------------
             */
-
-            if (
-                $existingStart->gte($create) &&
-                $existingEnd->lte($last)
-            ) {
+            if ($existingStart->gte($create) && $existingEnd->lte($last)) {
 
                 $existingLog->delete();
 
                 continue;
             }
 
-
             /*
-            |--------------------------------------------------------------------------
-            | CASE 2
+            |----------------------------------------------------------------
+            | RULE B
             |
-            | Edited START is inside existing log
-            | AND edited END is after existing END.
+            | Existing log contains edited_start, and edited_end reaches
+            | past (or exactly to) existing_end.
             |
-            | Existing: 00:00 → 04:00
-            | Edited:   01:00 → 09:00
+            | Existing: 00:00 -> 04:00
+            | Edited:   01:00 -> 09:00
             |
             | Result:
-            | Existing: 00:00 → 01:00
-            |--------------------------------------------------------------------------
+            | Existing: 00:00 -> 01:00   (truncate end to edited_start)
+            |----------------------------------------------------------------
             */
-
             if (
-                $create->gt($existingStart) &&
+                $existingStart->lte($create) &&
                 $create->lt($existingEnd) &&
                 $last->gte($existingEnd)
             ) {
@@ -1691,26 +1674,24 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
-
             /*
-            |--------------------------------------------------------------------------
-            | CASE 3
+            |----------------------------------------------------------------
+            | RULE C
             |
-            | Edited END is inside existing log
-            | AND edited START is before existing START.
+            | Existing log contains edited_end, and edited_start reaches
+            | before (or exactly to) existing_start.
             |
-            | Existing: 06:00 → 12:00
-            | Edited:   01:00 → 09:00
+            | Existing: 06:00 -> 12:00
+            | Edited:   01:00 -> 09:00
             |
             | Result:
-            | Existing: 09:00 → 12:00
-            |--------------------------------------------------------------------------
+            | Existing: 09:00 -> 12:00   (truncate start to edited_end)
+            |----------------------------------------------------------------
             */
-
             if (
+                $create->lte($existingStart) &&
                 $last->gt($existingStart) &&
-                $last->lt($existingEnd) &&
-                $create->lte($existingStart)
+                $last->lte($existingEnd)
             ) {
 
                 $existingLog->update([
@@ -1721,31 +1702,26 @@ function hod_log_mobile_time_data_edit(
                 continue;
             }
 
-
             /*
-            |--------------------------------------------------------------------------
-            | CASE 4
+            |----------------------------------------------------------------
+            | RULE D
             |
-            | Edited range completely covers existing range.
+            | Edited range completely covers existing range
+            | (edges exactly matching or beyond on both sides).
             |
-            | Existing: 04:00 → 08:00
-            | Edited:   01:00 → 09:00
+            | Existing: 04:00 -> 08:00
+            | Edited:   01:00 -> 09:00
             |
             | DELETE EXISTING
-            |--------------------------------------------------------------------------
+            |----------------------------------------------------------------
             */
-
-            if (
-                $create->lte($existingStart) &&
-                $last->gte($existingEnd)
-            ) {
+            if ($create->lte($existingStart) && $last->gte($existingEnd)) {
 
                 $existingLog->delete();
 
                 continue;
             }
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1772,7 +1748,6 @@ function hod_log_mobile_time_data_edit(
             return;
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Insert edited log
@@ -1783,17 +1758,13 @@ function hod_log_mobile_time_data_edit(
             'driver_id' => $driverId,
             'vehicle_id' => $vehicleId,
             'current_shift_status' => $shiftId,
-
             'start_log_time' => $create,
             'end_log_time' => $last,
-
             'start_log_time_unix' => $create->timestamp,
             'end_log_time_unix' => $last->timestamp,
-
             'location_name' => $location,
             'location_end' => $location,
             'notes' => $notes,
-
             'system_entry' => 0,
             'is_add_approved' => 1,
         ]);
