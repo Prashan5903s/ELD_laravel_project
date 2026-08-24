@@ -1615,14 +1615,41 @@ function hod_log_mobile_time_data_edit(
 
     DB::transaction(function () use ($driverId, $vehicleId, $shiftId, $create, $last, $currentTime, $location, $notes) {
 
+        $ruleIds = RuleAssign::where('user_id', $driverId)->pluck('rule_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Helper: recompute shift_start / cycle_start for a log after it has
+        | been truncated, and persist them.
+        |--------------------------------------------------------------------------
+        */
+        $applyShiftCycle = function ($log) use ($currentTime, $location, $ruleIds) {
+            $shiftStart = 0;
+            $cycleStart = 0;
+
+            $shiftData = shift_cycle_start_check($log, $currentTime, $location, $ruleIds, 0);
+
+            if ($shiftData) {
+                $shiftStart = $shiftData[0];
+                $cycleStart = $shiftData[1];
+            }
+
+            $log->update([
+                'shift_start' => $shiftStart,
+                'cycle_start' => $cycleStart,
+            ]);
+        };
+
         /*
         |--------------------------------------------------------------------------
         | Find logs overlapping the edited range
         |--------------------------------------------------------------------------
         */
 
-        $existingLogs = DriverShiftLog::where('driver_id', $driverId)
-            ->where('vehicle_id', $vehicleId)
+        $baseLogQuery = DriverShiftLog::where('driver_id', $driverId)
+            ->where('vehicle_id', $vehicleId);
+
+        $existingLogs = (clone $baseLogQuery)
             ->where('start_log_time', '<', $last)
             ->where(function ($query) use ($create) {
                 $query->whereNull('end_log_time')
@@ -1655,134 +1682,124 @@ function hod_log_mobile_time_data_edit(
 
                 $existingLog->delete();
 
-                continue;
-            }
-
-            /*
-            |----------------------------------------------------------------
-            | RULE D
-            |
-            | Edited range completely covers existing range.
-            |
-            | Existing: 04:00 -> 08:00
-            | Edited:   01:00 -> 09:00
-            |
-            | DELETE EXISTING
-            |----------------------------------------------------------------
-            */
-            if ($create->lte($existingStart) && $last->gte($existingEnd)) {
+                /*
+                |----------------------------------------------------------------
+                | RULE D
+                |
+                | Edited range completely covers existing range.
+                |
+                | Existing: 04:00 -> 08:00
+                | Edited:   01:00 -> 09:00
+                |
+                | DELETE EXISTING
+                |----------------------------------------------------------------
+                */
+            } elseif ($create->lte($existingStart) && $last->gte($existingEnd)) {
 
                 $existingLog->delete();
 
-                continue;
-            }
-
-            /*
-            |----------------------------------------------------------------
-            | RULE B
-            |
-            | edited_start falls strictly inside the existing log
-            | -> truncate existing log's end to edited_start.
-            |
-            | Existing: 00:00 -> 09:00
-            | Edited:   03:00 -> 05:00   (edit start lands inside existing)
-            |
-            | Result:
-            | Existing: 00:00 -> 03:00
-            |----------------------------------------------------------------
-            */
-            if ($create->gt($existingStart) && $create->lt($existingEnd)) {
+                /*
+                |----------------------------------------------------------------
+                | RULE B
+                |
+                | edited_start falls strictly inside the existing log
+                | -> truncate existing log's end to edited_start.
+                |
+                | Existing: 00:00 -> 09:00
+                | Edited:   03:00 -> 05:00   (edit start lands inside existing)
+                |
+                | Result:
+                | Existing: 00:00 -> 03:00
+                |----------------------------------------------------------------
+                */
+            } elseif ($create->gt($existingStart) && $create->lt($existingEnd)) {
 
                 $existingLog->update([
                     'end_log_time' => $create,
                     'end_log_time_unix' => $create->timestamp,
                 ]);
 
-                continue;
-            }
+                $applyShiftCycle($existingLog);
 
-            /*
-            |----------------------------------------------------------------
-            | RULE B-EDGE
-            |
-            | edited_start is exactly equal to existing_start, and
-            | edited_end lands strictly inside existing (not past it,
-            | that case is already handled by Rule A/D above)
-            | -> existing shrinks to start at edited_end.
-            |
-            | Existing: 00:00 -> 09:00
-            | Edited:   00:00 -> 01:00
-            |
-            | Result:
-            | Existing: 01:00 -> 09:00
-            |----------------------------------------------------------------
-            */
-            if ($create->eq($existingStart) && $last->lt($existingEnd)) {
-
-                $existingLog->update([
-                    'start_log_time' => $last,
-                    'start_log_time_unix' => $last->timestamp,
-                ]);
-
-                continue;
-            }
-
-            /*
-            |----------------------------------------------------------------
-            | RULE C
-            |
-            | edited_end falls strictly inside the existing log
-            | -> truncate existing log's start to edited_end.
-            |
-            | Existing: 06:00 -> 12:00
-            | Edited:   01:00 -> 09:00
-            |
-            | Result:
-            | Existing: 09:00 -> 12:00
-            |----------------------------------------------------------------
-            */
-            if ($last->gt($existingStart) && $last->lt($existingEnd)) {
+                /*
+                |----------------------------------------------------------------
+                | RULE B-EDGE
+                |
+                | edited_start is exactly equal to existing_start, and
+                | edited_end lands strictly inside existing (not past it,
+                | that case is already handled by Rule A/D above)
+                | -> existing shrinks to start at edited_end.
+                |
+                | Existing: 00:00 -> 09:00
+                | Edited:   00:00 -> 01:00
+                |
+                | Result:
+                | Existing: 01:00 -> 09:00
+                |----------------------------------------------------------------
+                */
+            } elseif ($create->eq($existingStart) && $last->lt($existingEnd)) {
 
                 $existingLog->update([
                     'start_log_time' => $last,
                     'start_log_time_unix' => $last->timestamp,
                 ]);
 
-                continue;
-            }
+                $applyShiftCycle($existingLog);
 
-            /*
-            |----------------------------------------------------------------
-            | RULE C-EDGE
-            |
-            | edited_end is exactly equal to existing_end, and
-            | edited_start lands strictly inside existing (not before it,
-            | that case is already handled by Rule A/D above)
-            | -> existing shrinks to end at edited_start.
-            |
-            | Existing: 00:00 -> 09:00
-            | Edited:   09:00 -> 23:59:59
-            |
-            | Result:
-            | Existing: 00:00 -> 09:00 stays as-is here since edited_start
-            | (09:00) is NOT strictly inside existing; this rule only
-            | triggers when edited_start > existing_start.
-            |----------------------------------------------------------------
-            */
-            if ($last->eq($existingEnd) && $create->gt($existingStart)) {
+                /*
+                |----------------------------------------------------------------
+                | RULE C
+                |
+                | edited_end falls strictly inside the existing log
+                | -> truncate existing log's start to edited_end.
+                |
+                | Existing: 06:00 -> 12:00
+                | Edited:   01:00 -> 09:00
+                |
+                | Result:
+                | Existing: 09:00 -> 12:00
+                |----------------------------------------------------------------
+                */
+            } elseif ($last->gt($existingStart) && $last->lt($existingEnd)) {
+
+                $existingLog->update([
+                    'start_log_time' => $last,
+                    'start_log_time_unix' => $last->timestamp,
+                ]);
+
+                $applyShiftCycle($existingLog);
+
+                /*
+                |----------------------------------------------------------------
+                | RULE C-EDGE
+                |
+                | edited_end is exactly equal to existing_end, and
+                | edited_start lands strictly inside existing (not before it,
+                | that case is already handled by Rule A/D above)
+                | -> existing shrinks to end at edited_start.
+                |
+                | Existing: 00:00 -> 09:00
+                | Edited:   09:00 -> 23:59:59
+                |
+                | Result:
+                | Existing: 00:00 -> 09:00 stays as-is here since edited_start
+                | (09:00) is NOT strictly inside existing; this rule only
+                | triggers when edited_start > existing_start.
+                |----------------------------------------------------------------
+                */
+            } elseif ($last->eq($existingEnd) && $create->gt($existingStart)) {
 
                 $existingLog->update([
                     'end_log_time' => $create,
                     'end_log_time_unix' => $create->timestamp,
                 ]);
 
-                continue;
+                $applyShiftCycle($existingLog);
             }
         }
 
         // Clean up any zero-length or invalid fragments produced above
-        DriverShiftLog::where('driver_id', $driverId)
-            ->where('vehicle_id', $vehicleId)
+        (clone $baseLogQuery)
             ->whereColumn('start_log_time', '>=', 'end_log_time')
             ->delete();
 
@@ -1792,8 +1809,7 @@ function hod_log_mobile_time_data_edit(
         |--------------------------------------------------------------------------
         */
 
-        $sameLog = DriverShiftLog::where('driver_id', $driverId)
-            ->where('vehicle_id', $vehicleId)
+        $sameLog = (clone $baseLogQuery)
             ->where('start_log_time', $create)
             ->where('end_log_time', $last)
             ->first();
@@ -1808,6 +1824,8 @@ function hod_log_mobile_time_data_edit(
                 'is_add_approved' => 1,
             ]);
 
+            $applyShiftCycle($sameLog);
+
             return;
         }
 
@@ -1817,24 +1835,23 @@ function hod_log_mobile_time_data_edit(
         |--------------------------------------------------------------------------
         */
 
-        DriverShiftLog::create([
+        $newLog = DriverShiftLog::create([
             'driver_id' => $driverId,
             'vehicle_id' => $vehicleId,
             'current_shift_status' => $shiftId,
-
             'start_log_time' => $create,
             'end_log_time' => $last,
-
             'start_log_time_unix' => $create->timestamp,
             'end_log_time_unix' => $last->timestamp,
-
             'location_name' => $location,
             'location_end' => $location,
             'notes' => $notes,
-
             'system_entry' => 0,
             'is_add_approved' => 1,
         ]);
+
+        $applyShiftCycle($newLog);
+
     });
 
     return true;
