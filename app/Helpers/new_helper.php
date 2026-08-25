@@ -651,11 +651,11 @@ function mobile_insertMissingLogs($data)
     $last = end($data);
 
     if (
-    strtotime($last['start_log_time']) 
-    strtotime($last['end_log_time'])
-) {
-    $result[] = $last;
-}
+        strtotime($last['start_log_time']) 
+        strtotime($last['end_log_time'])
+    ) {
+        $result[] = $last;
+    }
 
     return array_values($result);
 }
