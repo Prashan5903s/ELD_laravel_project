@@ -651,11 +651,11 @@ function mobile_insertMissingLogs($data)
     $last = end($data);
 
     if (
-        strtotime($last['start_log_time']) <
-        strtotime($last['end_log_time'])
-    ) {
-        $result[] = $last;
-    }
+    strtotime($last['start_log_time']) 
+    strtotime($last['end_log_time'])
+) {
+    $result[] = $last;
+}
 
     return array_values($result);
 }
@@ -1668,9 +1668,9 @@ function hod_log_mobile_time_data_edit(
 
             /*
             |----------------------------------------------------------------
-            | RULE A
+            | CASE 1
             |
-            | Existing log fully inside edited range (or exactly equal).
+            | Existing log fully inside (or equal to) the edited range.
             |
             | Existing: 04:00 -> 06:00
             | Edited:   01:00 -> 09:00
@@ -1681,120 +1681,111 @@ function hod_log_mobile_time_data_edit(
             if ($existingStart->gte($create) && $existingEnd->lte($last)) {
 
                 $existingLog->delete();
+                continue;
+            }
 
-                /*
-                |----------------------------------------------------------------
-                | RULE D
-                |
-                | Edited range completely covers existing range.
-                |
-                | Existing: 04:00 -> 08:00
-                | Edited:   01:00 -> 09:00
-                |
-                | DELETE EXISTING
-                |----------------------------------------------------------------
-                */
-            } elseif ($create->lte($existingStart) && $last->gte($existingEnd)) {
+            /*
+            |----------------------------------------------------------------
+            | CASE 2
+            |
+            | Existing straddles the LEFT edge of the edit window:
+            | existingStart < create < existingEnd <= last
+            |
+            | Existing: 00:00 -> 05:00
+            | Edited:   03:00 -> 09:00
+            |
+            | Result:
+            | Existing: 00:00 -> 03:00 (truncated)
+            |----------------------------------------------------------------
+            */
+            if ($existingStart->lt($create) && $existingEnd->gt($create) && $existingEnd->lte($last)) {
 
+                $existingLog->update([
+                    'end_log_time' => $create,
+                    'end_log_time_unix' => $create->timestamp,
+                ]);
+
+                $applyShiftCycle($existingLog);
+                continue;
+            }
+
+            /*
+            |----------------------------------------------------------------
+            | CASE 3
+            |
+            | Existing straddles the RIGHT edge of the edit window:
+            | create <= existingStart < last < existingEnd
+            |
+            | Existing: 06:00 -> 12:00
+            | Edited:   01:00 -> 09:00
+            |
+            | Result:
+            | Existing: 09:00 -> 12:00 (truncated)
+            |----------------------------------------------------------------
+            */
+            if ($existingStart->gte($create) && $existingStart->lt($last) && $existingEnd->gt($last)) {
+
+                $existingLog->update([
+                    'start_log_time' => $last,
+                    'start_log_time_unix' => $last->timestamp,
+                ]);
+
+                $applyShiftCycle($existingLog);
+                continue;
+            }
+
+            /*
+            |----------------------------------------------------------------
+            | CASE 4
+            |
+            | Edit window is fully INSIDE the existing log:
+            | existingStart < create AND last < existingEnd
+            |
+            | Existing: 00:00 -> 09:00
+            | Edited:   03:00 -> 05:00
+            |
+            | Result:
+            | Existing (left remainder):  00:00 -> 03:00
+            | New row (right remainder):  05:00 -> 09:00
+            |
+            | This is the split case that was MISSING before and was the
+            | main source of overlapping rows.
+            |----------------------------------------------------------------
+            */
+            if ($existingStart->lt($create) && $existingEnd->gt($last)) {
+
+                // Shrink existing to the left remainder
+                $existingLog->update([
+                    'end_log_time' => $create,
+                    'end_log_time_unix' => $create->timestamp,
+                ]);
+
+                $applyShiftCycle($existingLog);
+
+                // Create the right remainder as a brand-new row
+                $rightRemainder = DriverShiftLog::create([
+                    'driver_id' => $driverId,
+                    'vehicle_id' => $vehicleId,
+                    'current_shift_status' => $existingLog->current_shift_status,
+                    'start_log_time' => $last,
+                    'end_log_time' => $existingEnd,
+                    'start_log_time_unix' => $last->timestamp,
+                    'end_log_time_unix' => $existingEnd->timestamp,
+                    'location_name' => $existingLog->location_name,
+                    'location_end' => $existingLog->location_end,
+                    'notes' => $existingLog->notes,
+                    'system_entry' => 0,
+                    'is_add_approved' => 1,
+                ]);
+
+                $applyShiftCycle($rightRemainder);
+                continue;
+            }
+
+            // Any other overlap shape (shouldn't occur given the query filter,
+            // but guard against it rather than silently leaving a stale row).
+            if ($existingStart->lt($last) && $existingEnd->gt($create)) {
                 $existingLog->delete();
-
-                /*
-                |----------------------------------------------------------------
-                | RULE B
-                |
-                | edited_start falls strictly inside the existing log
-                | -> truncate existing log's end to edited_start.
-                |
-                | Existing: 00:00 -> 09:00
-                | Edited:   03:00 -> 05:00   (edit start lands inside existing)
-                |
-                | Result:
-                | Existing: 00:00 -> 03:00
-                |----------------------------------------------------------------
-                */
-            } elseif ($create->gt($existingStart) && $create->lt($existingEnd)) {
-
-                $existingLog->update([
-                    'end_log_time' => $create,
-                    'end_log_time_unix' => $create->timestamp,
-                ]);
-
-                $applyShiftCycle($existingLog);
-
-                /*
-                |----------------------------------------------------------------
-                | RULE B-EDGE
-                |
-                | edited_start is exactly equal to existing_start, and
-                | edited_end lands strictly inside existing (not past it,
-                | that case is already handled by Rule A/D above)
-                | -> existing shrinks to start at edited_end.
-                |
-                | Existing: 00:00 -> 09:00
-                | Edited:   00:00 -> 01:00
-                |
-                | Result:
-                | Existing: 01:00 -> 09:00
-                |----------------------------------------------------------------
-                */
-            } elseif ($create->eq($existingStart) && $last->lt($existingEnd)) {
-
-                $existingLog->update([
-                    'start_log_time' => $last,
-                    'start_log_time_unix' => $last->timestamp,
-                ]);
-
-                $applyShiftCycle($existingLog);
-
-                /*
-                |----------------------------------------------------------------
-                | RULE C
-                |
-                | edited_end falls strictly inside the existing log
-                | -> truncate existing log's start to edited_end.
-                |
-                | Existing: 06:00 -> 12:00
-                | Edited:   01:00 -> 09:00
-                |
-                | Result:
-                | Existing: 09:00 -> 12:00
-                |----------------------------------------------------------------
-                */
-            } elseif ($last->gt($existingStart) && $last->lt($existingEnd)) {
-
-                $existingLog->update([
-                    'start_log_time' => $last,
-                    'start_log_time_unix' => $last->timestamp,
-                ]);
-
-                $applyShiftCycle($existingLog);
-
-                /*
-                |----------------------------------------------------------------
-                | RULE C-EDGE
-                |
-                | edited_end is exactly equal to existing_end, and
-                | edited_start lands strictly inside existing (not before it,
-                | that case is already handled by Rule A/D above)
-                | -> existing shrinks to end at edited_start.
-                |
-                | Existing: 00:00 -> 09:00
-                | Edited:   09:00 -> 23:59:59
-                |
-                | Result:
-                | Existing: 00:00 -> 09:00 stays as-is here since edited_start
-                | (09:00) is NOT strictly inside existing; this rule only
-                | triggers when edited_start > existing_start.
-                |----------------------------------------------------------------
-                */
-            } elseif ($last->eq($existingEnd) && $create->gt($existingStart)) {
-
-                $existingLog->update([
-                    'end_log_time' => $create,
-                    'end_log_time_unix' => $create->timestamp,
-                ]);
-
-                $applyShiftCycle($existingLog);
             }
         }
 

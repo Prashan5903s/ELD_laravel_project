@@ -759,7 +759,6 @@ class HOSMobileAPIController extends Controller
                 'log_data' => 'required|array|min:1',
                 'log_data.*.vehicle_id' => 'required|integer',
                 'log_data.*.shift_id' => 'required|integer',
-                // Not used for edit logic
                 'log_data.*.log_id' => 'nullable|integer',
                 'log_data.*.edit_start' => 'required|date_format:H:i:s',
                 'log_data.*.edit_end' => 'required|date_format:H:i:s',
@@ -854,6 +853,58 @@ class HOSMobileAPIController extends Controller
                     );
                 }
 
+                // Final cleanup: drop inverted/zero-length rows
+                DriverShiftLog::where('driver_id', $driverId)
+                    ->where(function ($q) {
+
+                        $q->whereColumn(
+                            'start_log_time',
+                            '>=',
+                            'end_log_time'
+                        )
+                            ->orWhereColumn(
+                                'start_log_time_unix',
+                                '>=',
+                                'end_log_time_unix'
+                            );
+                    })
+                    ->delete();
+
+                // Final safety net: clamp any residual overlaps per vehicle
+                $vehicleIds = DriverShiftLog::where('driver_id', $driverId)
+                    ->distinct()
+                    ->pluck('vehicle_id');
+
+                foreach ($vehicleIds as $vehicleId) {
+
+                    $orderedLogs = DriverShiftLog::where('driver_id', $driverId)
+                        ->where('vehicle_id', $vehicleId)
+                        ->whereNotNull('start_log_time')
+                        ->whereNotNull('end_log_time')
+                        ->orderBy('start_log_time')
+                        ->get();
+
+                    $count = $orderedLogs->count();
+
+                    for ($i = 0; $i < $count - 1; $i++) {
+
+                        $current = $orderedLogs[$i];
+                        $next = $orderedLogs[$i + 1];
+
+                        $currentEnd = Carbon::parse($current->end_log_time);
+                        $nextStart = Carbon::parse($next->start_log_time);
+
+                        if ($currentEnd->gt($nextStart)) {
+
+                            $current->update([
+                                'end_log_time' => $nextStart,
+                                'end_log_time_unix' => $nextStart->timestamp,
+                            ]);
+                        }
+                    }
+                }
+
+                // Clean up anything the clamp pass turned into zero/negative length
                 DriverShiftLog::where('driver_id', $driverId)
                     ->where(function ($q) {
 

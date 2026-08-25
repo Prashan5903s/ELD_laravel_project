@@ -1917,17 +1917,11 @@ function secondsToTime($seconds)
 
 //This is used to select start and end time of the log
 function create_end_time(
-
     $startRow,
-
     $startTime,
-
     $lastRow,
-
     $endTime,
-
     $currentTime
-
 ) {
 
     $create = $startRow->start_log_time;
@@ -13133,7 +13127,7 @@ function shift_cycle_start_check(
                 }
             }
         }
-        // }
+
     } else {
 
         $shift_start = 1;
