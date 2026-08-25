@@ -861,8 +861,8 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     "start_log_time" => $startTimeFormatted,
                     "end_log_time" => $endTimeFormatted,
                     'vehicle_name' => $vehicle ? $vehicle->name : '',
-                    'vehicle_id' => $vehicle ? $vehicle->id : ""
-
+                    'vehicle_id' => $vehicle ? $vehicle->id : "",
+                    "is_edit_allowed" => $data->system_entry === 1 && $log === 3
                 ];
             }
         }
@@ -901,7 +901,8 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     "start_log_time" => $startTimeHI,
                     "end_log_time" => $startTimeLogData,
                     'vehicle_name' => $datass[$arrayLen - 1]['vehicle_name'],
-                    'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id']
+                    'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
+                    "is_edit_allowed" => true
                 ];
 
                 array_unshift($datass, $newLog);
@@ -925,8 +926,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                         "start_log_time" => $datass[$arrayLen - 1]['end_log_time'],
                         "end_log_time" => $currentHI,
                         'vehicle_name' => $datass[$arrayLen - 1]["vehicle_name"],
-                        'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id']
+                        'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
+                        "is_edit_allowed" => true
                     ];
+
                 }
             } else {
 
@@ -942,8 +945,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                         "start_log_time" => $datass[$arrayLen - 1]['end_log_time'],
                         "end_log_time" => "23:59:59",
                         'vehicle_name' => $datass[$arrayLen - 1]['vehicle_name'],
-                        'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id']
+                        'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
+                        "is_edit_allowed" => true
                     ];
+
                 }
             }
         } else {
@@ -970,8 +975,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     "start_log_time" => $startTimeHI,
                     "end_log_time" => $currentHI,
                     'vehicle_name' => "",
-                    'vehicle_id' => ""
+                    'vehicle_id' => "",
+                    "is_edit_allowed" => true
                 ];
+
             } elseif ($startTime < $currentTime) {
 
                 $totalTimeDiffInSec += Carbon::parse($startTimeHI)
@@ -984,8 +991,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     "start_log_time" => $startTimeHI,
                     "end_log_time" => $endTimeHI,
                     'vehicle_name' => "",
-                    'vehicle_id' => ""
+                    'vehicle_id' => "",
+                    "is_edit_allowed" => true
                 ];
+
             } else {
 
                 $totalTimeDiffInSec += Carbon::parse($startTimeHI)
@@ -998,8 +1007,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     "start_log_time" => $startTimeHI,
                     "end_log_time" => $startTimeHI,
                     'vehicle_name' => "",
-                    'vehicle_id' => ""
+                    'vehicle_id' => "",
+                    "is_edit_allowed" => true
                 ];
+
             }
         }
     } else {
@@ -1023,8 +1034,10 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                 "log_name" => "Off duty",
                 "start_log_time" => $startTime,
                 "end_log_time" => $currentStartTime,
-                'vehicle_name' => "abc",
-                'vehicle_id' => ""
+                'vehicle_name' => "",
+                'vehicle_id' => "",
+                "is_edit_allowed" => true
+
             ];
         } else {
 
@@ -1041,7 +1054,7 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                 "log_name" => "Off duty",
                 "start_log_time" => $startTime,
                 "end_log_time" => $endTime,
-                'vehicle_name' => "abc",
+                'vehicle_name' => "",
                 'vehicle_id' => ""
             ];
         }
@@ -1050,8 +1063,8 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
     if ($distinctVehicles && count($distinctVehicles) == 0) {
 
         $distinctVehicles[] = [
-            "id" => 1,
-            "name" => "abc",
+            "id" => "",
+            "name" => "",
 
         ];
     }
