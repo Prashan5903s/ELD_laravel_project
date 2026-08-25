@@ -814,110 +814,101 @@ class HOSMobileAPIController extends Controller
 
             DB::transaction(function () use ($validated, $driverId, $logDate, $timezone, $currentTime) {
 
-                foreach ($validated['log_data'] as $index => $log) {
+                // Group log_data by vehicle_id since overlap cleanup must be per-vehicle
+                $byVehicle = collect($validated['log_data'])->groupBy('vehicle_id');
 
-                    $vehicleId = $log['vehicle_id'];
-                    $shiftId = $log['shift_id'];
+                foreach ($byVehicle as $vehicleId => $logs) {
 
-                    $location = $log['location'];
-                    $notes = $log['notes'] ?? null;
+                    // Build normalized Carbon start/end for every incoming log, sorted
+                    $incoming = $logs->map(function ($log) use ($logDate, $timezone) {
+                        $start = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
+                        $end = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
 
-                    $logStartTime = Carbon::parse(
-                        $logDate . ' ' . $log['edit_start'],
-                        $timezone
-                    );
-
-                    $logEndTime = Carbon::parse(
-                        $logDate . ' ' . $log['edit_end'],
-                        $timezone
-                    );
-
-                    if ($logStartTime->greaterThanOrEqualTo($logEndTime)) {
-
-                        throw new \Exception(
-                            "Invalid log duration at log_data.$index. " .
-                            "Start time ({$log['edit_start']}) must be earlier " .
-                            "than end time ({$log['edit_end']})."
-                        );
-                    }
-
-                    hod_log_mobile_time_data_edit(
-                        $driverId,
-                        $vehicleId,
-                        $shiftId,
-                        $logStartTime,
-                        $logEndTime,
-                        $currentTime,
-                        $location,
-                        $notes
-                    );
-                }
-
-                // Final cleanup: drop inverted/zero-length rows
-                DriverShiftLog::where('driver_id', $driverId)
-                    ->where(function ($q) {
-
-                        $q->whereColumn(
-                            'start_log_time',
-                            '>=',
-                            'end_log_time'
-                        )
-                            ->orWhereColumn(
-                                'start_log_time_unix',
-                                '>=',
-                                'end_log_time_unix'
+                        if ($start->gte($end)) {
+                            throw new \Exception(
+                                "Invalid log duration: start ({$log['edit_start']}) must be earlier than end ({$log['edit_end']})."
                             );
-                    })
-                    ->delete();
-
-                // Final safety net: clamp any residual overlaps per vehicle
-                $vehicleIds = DriverShiftLog::where('driver_id', $driverId)
-                    ->distinct()
-                    ->pluck('vehicle_id');
-
-                foreach ($vehicleIds as $vehicleId) {
-
-                    $orderedLogs = DriverShiftLog::where('driver_id', $driverId)
-                        ->where('vehicle_id', $vehicleId)
-                        ->whereNotNull('start_log_time')
-                        ->whereNotNull('end_log_time')
-                        ->orderBy('start_log_time')
-                        ->get();
-
-                    $count = $orderedLogs->count();
-
-                    for ($i = 0; $i < $count - 1; $i++) {
-
-                        $current = $orderedLogs[$i];
-                        $next = $orderedLogs[$i + 1];
-
-                        $currentEnd = Carbon::parse($current->end_log_time);
-                        $nextStart = Carbon::parse($next->start_log_time);
-
-                        if ($currentEnd->gt($nextStart)) {
-
-                            $current->update([
-                                'end_log_time' => $nextStart,
-                                'end_log_time_unix' => $nextStart->timestamp,
-                            ]);
                         }
+
+                        return [
+                            'shift_id' => $log['shift_id'],
+                            'location' => $log['location'],
+                            'notes' => $log['notes'] ?? null,
+                            'start' => $start,
+                            'end' => $end,
+                        ];
+                    })->sortBy(fn($l) => $l['start']->timestamp)->values();
+
+                    // The full window this batch covers, per vehicle
+                    $windowStart = $incoming->first()['start'];
+                    $windowEnd = $incoming->last()['end'];
+
+                    // 1. Wipe every existing row for this vehicle that overlaps the whole window
+                    DriverShiftLog::where('driver_id', $driverId)
+                        ->where('vehicle_id', $vehicleId)
+                        ->where('start_log_time', '<', $windowEnd)
+                        ->where(function ($q) use ($windowStart) {
+                            $q->whereNull('end_log_time')
+                                ->orWhere('end_log_time', '>', $windowStart);
+                        })
+                        ->delete();
+
+                    // 2. Re-insert the incoming logs fresh, clamping any accidental
+                    //    overlap between consecutive incoming entries themselves
+                    $ruleIds = RuleAssign::where('user_id', $driverId)->pluck('rule_id');
+
+                    for ($i = 0; $i < $incoming->count(); $i++) {
+
+                        $current = $incoming[$i];
+                        $start = $current['start'];
+                        $end = $current['end'];
+
+                        // Clamp against the next incoming log if they overlap
+                        if ($i < $incoming->count() - 1) {
+                            $nextStart = $incoming[$i + 1]['start'];
+                            if ($end->gt($nextStart)) {
+                                $end = $nextStart->copy();
+                            }
+                        }
+
+                        if ($start->gte($end)) {
+                            continue; // became zero/negative length after clamping, skip
+                        }
+
+                        $newLog = DriverShiftLog::create([
+                            'driver_id' => $driverId,
+                            'vehicle_id' => $vehicleId,
+                            'current_shift_status' => $current['shift_id'],
+                            'start_log_time' => $start,
+                            'end_log_time' => $end,
+                            'start_log_time_unix' => $start->timestamp,
+                            'end_log_time_unix' => $end->timestamp,
+                            'location_name' => $current['location'],
+                            'location_end' => $current['location'],
+                            'notes' => $current['notes'],
+                            'system_entry' => 0,
+                            'is_add_approved' => 1,
+                        ]);
+
+                        $shiftStart = 0;
+                        $cycleStart = 0;
+                        $shiftData = shift_cycle_start_check($newLog, $currentTime, $current['location'], $ruleIds, 0);
+                        if ($shiftData) {
+                            $shiftStart = $shiftData[0];
+                            $cycleStart = $shiftData[1];
+                        }
+                        $newLog->update([
+                            'shift_start' => $shiftStart,
+                            'cycle_start' => $cycleStart,
+                        ]);
                     }
                 }
 
-                // Clean up anything the clamp pass turned into zero/negative length
+                // Final cleanup: drop any inverted/zero-length rows
                 DriverShiftLog::where('driver_id', $driverId)
                     ->where(function ($q) {
-
-                        $q->whereColumn(
-                            'start_log_time',
-                            '>=',
-                            'end_log_time'
-                        )
-                            ->orWhereColumn(
-                                'start_log_time_unix',
-                                '>=',
-                                'end_log_time_unix'
-                            );
+                        $q->whereColumn('start_log_time', '>=', 'end_log_time')
+                            ->orWhereColumn('start_log_time_unix', '>=', 'end_log_time_unix');
                     })
                     ->delete();
             });
