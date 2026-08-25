@@ -82,7 +82,7 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::get('approval/mobile/request', [ApprovalMobileAPIController::class, 'index']);
 
-    Route::post('approval/mobile/request/{type}/{accept}', [ApprovalMobileAPIController::class, 'approval_func']);
+    Route::post('approval/mobile/request/data/log', [ApprovalMobileAPIController::class, 'approval_func']);
 
     Route::post('insert/bluetooth-data', [BluetoothAPIController::class, "create"]);
 
