@@ -616,14 +616,11 @@ function mobile_insertMissingLogs($data)
         $currentEnd = strtotime($data[$i]['end_log_time']);
         $nextStart = strtotime($data[$i + 1]['start_log_time']);
 
-        // If this log overlaps the next one, trim its end back to the
-        // next log's start so overlapping fragments never reach the response.
         if ($currentEnd > $nextStart) {
             $data[$i]['end_log_time'] = date("H:i:s", $nextStart);
             $currentEnd = $nextStart;
         }
 
-        // After trimming, the log may have become zero/negative length; drop it.
         if (
             strtotime($data[$i]['start_log_time']) >=
             strtotime($data[$i]['end_log_time'])
@@ -633,7 +630,6 @@ function mobile_insertMissingLogs($data)
 
         $result[] = $data[$i];
 
-        // Insert missing OFF DUTY log only when there is a real gap
         if ($currentEnd < $nextStart) {
 
             $result[] = [
