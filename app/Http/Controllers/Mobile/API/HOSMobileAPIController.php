@@ -760,9 +760,12 @@ class HOSMobileAPIController extends Controller
                 'log_data.*.vehicle_id' => 'required|integer',
                 'log_data.*.shift_id' => 'required|integer',
                 'log_data.*.log_id' => 'nullable|integer',
-                'log_data.*.edit_start' => 'required|date_format:H:i:s',
-                'log_data.*.edit_end' => 'required|date_format:H:i:s',
-                'log_data.*.location' => 'required|string|max:255',
+                'log_data.*.start_log_time' => 'required|date_format:H:i:s',
+                'log_data.*.end_log_time' => 'required|date_format:H:i:s',
+                'log_data.*.location_start' => 'required|string|max:255',
+                'log_data.*.location_end' => 'required|string|max:255',
+                'log_data.*.engine_hour' => 'required|string|max:255',
+                'log_data.*.odometer' => 'required|string|max:255',
                 'log_data.*.notes' => 'nullable|string|max:1000',
             ]);
 
@@ -779,17 +782,13 @@ class HOSMobileAPIController extends Controller
         try {
 
             $driverId = Auth::id();
-
             $logDate = $validated['log_date'];
-
             $user = Auth::user();
-
             $masterId = $user->created_by;
 
             $userInfo = UserInfo::where('user_id', $driverId)->first();
 
             if (!$userInfo) {
-
                 return response()->json([
                     'status' => 'failure',
                     'statusCode' => 404,
@@ -802,15 +801,8 @@ class HOSMobileAPIController extends Controller
 
             $currentTime = Carbon::now($timezone);
 
-            $startTime = Carbon::parse(
-                $logDate . ' 00:00:00',
-                $timezone
-            );
-
-            $endTime = Carbon::parse(
-                $logDate . ' 23:59:59',
-                $timezone
-            );
+            $startTime = Carbon::parse($logDate . ' 00:00:00', $timezone);
+            $endTime = Carbon::parse($logDate . ' 23:59:59', $timezone);
 
             DB::transaction(function () use ($validated, $driverId, $logDate, $timezone, $currentTime) {
 
@@ -821,18 +813,22 @@ class HOSMobileAPIController extends Controller
 
                     // Build normalized Carbon start/end for every incoming log, sorted
                     $incoming = $logs->map(function ($log) use ($logDate, $timezone) {
-                        $start = Carbon::parse($logDate . ' ' . $log['edit_start'], $timezone);
-                        $end = Carbon::parse($logDate . ' ' . $log['edit_end'], $timezone);
+
+                        $start = Carbon::parse($logDate . ' ' . $log['start_log_time'], $timezone);
+                        $end = Carbon::parse($logDate . ' ' . $log['end_log_time'], $timezone);
 
                         if ($start->gte($end)) {
                             throw new \Exception(
-                                "Invalid log duration: start ({$log['edit_start']}) must be earlier than end ({$log['edit_end']})."
+                                "Invalid log duration: start ({$log['start_log_time']}) must be earlier than end ({$log['end_log_time']})."
                             );
                         }
 
                         return [
                             'shift_id' => $log['shift_id'],
-                            'location' => $log['location'],
+                            'location_start' => $log['location_start'],
+                            'location_end' => $log['location_end'],
+                            'odometer' => $log['odometer'],
+                            'engine_hour' => $log['engine_hour'],
                             'notes' => $log['notes'] ?? null,
                             'start' => $start,
                             'end' => $end,
@@ -883,8 +879,10 @@ class HOSMobileAPIController extends Controller
                             'end_log_time' => $end,
                             'start_log_time_unix' => $start->timestamp,
                             'end_log_time_unix' => $end->timestamp,
-                            'location_name' => $current['location'],
-                            'location_end' => $current['location'],
+                            'location_name' => $current['location_start'],
+                            'location_end' => $current['location_end'],
+                            'odometer' => $current['odometer'],
+                            'engineHour' => $current['engine_hour'],
                             'notes' => $current['notes'],
                             'system_entry' => 0,
                             'is_add_approved' => 1,
@@ -892,7 +890,7 @@ class HOSMobileAPIController extends Controller
 
                         $shiftStart = 0;
                         $cycleStart = 0;
-                        $shiftData = shift_cycle_start_check($newLog, $currentTime, $current['location'], $ruleIds, 0);
+                        $shiftData = shift_cycle_start_check($newLog, $currentTime, $current['location_start'], $ruleIds, 0);
                         if ($shiftData) {
                             $shiftStart = $shiftData[0];
                             $cycleStart = $shiftData[1];
@@ -933,7 +931,6 @@ class HOSMobileAPIController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-
             return response()->json([
                 'status' => 'failure',
                 'statusCode' => 500,
