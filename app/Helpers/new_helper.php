@@ -641,6 +641,7 @@ function mobile_insertMissingLogs($data)
                 "end_log_time" => $nextStart->format('H:i:s'),
                 "vehicle_name" => $data[$i]["vehicle_name"],
                 "vehicle_id" => $data[$i]["vehicle_id"],
+                "is_edit_allowed" => true
             ];
         }
     }
@@ -660,8 +661,6 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
     $startTime = Carbon::parse($startTime)->startOfDay();
 
     $endTime = Carbon::parse($endTime)->endOfDay();
-
-    $viol = check_eld_rules($id, $startTime, $endTime);
 
     $datass = [];
 
