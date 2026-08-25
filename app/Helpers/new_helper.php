@@ -1235,7 +1235,7 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "location_start" => $locationStart,
                     "location_end" => $locationEnd,
                     "engine_hour" => $engineHour,
-                    "is_edit_allowed" => $data->system_entry === 1 || $log === 3
+                    "is_edit_allowed" => $data->system_entry !== 1 || $log !== 3
                 ];
             }
         }
