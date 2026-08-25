@@ -1270,7 +1270,7 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "odometer" => $datass[$arrayLen - 1]['odometer'],
                     "location_start" => $datass[$arrayLen - 1]['location_start'],
                     "location_end" => $datass[$arrayLen - 1]['location_end'],
-                    "engine_hour" => $datass[$arrayLen - 1]['engineHour'],
+                    "engine_hour" => $datass[$arrayLen - 1]['engine_hour'],
                     "is_edit_allowed" => true
                 ];
 
@@ -1299,7 +1299,7 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                         "odometer" => $datass[$arrayLen - 1]['odometer'],
                         "location_start" => $datass[$arrayLen - 1]['location_start'],
                         "location_end" => $datass[$arrayLen - 1]['location_end'],
-                        "engine_hour" => $datass[$arrayLen - 1]['engineHour'],
+                        "engine_hour" => $datass[$arrayLen - 1]['engine_hour'],
                         "is_edit_allowed" => true
                     ];
                 }
@@ -1321,7 +1321,7 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                         "odometer" => $datass[$arrayLen - 1]['odometer'],
                         "location_start" => $datass[$arrayLen - 1]['location_start'],
                         "location_end" => $datass[$arrayLen - 1]['location_end'],
-                        "engine_hour" => $datass[$arrayLen - 1]['engineHour'],
+                        "engine_hour" => $datass[$arrayLen - 1]['engine_hour'],
                         "is_edit_allowed" => true
                     ];
                 }
