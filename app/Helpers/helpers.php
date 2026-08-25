@@ -12384,47 +12384,75 @@ function insertHOSMissingLogs($data)
         return [];
     }
 
+    // Sort by start time first
     usort($data, function ($a, $b) {
-        return strtotime($a[4]) <=> strtotime($b[4]);
+        return Carbon::parse($a[4])->lte(Carbon::parse($b[4])) ? -1 : 1;
     });
 
     $result = [];
 
-    foreach ($data as $i => $log) {
+    for ($i = 0; $i < count($data); $i++) {
 
-        $start = strtotime($log[4]);
-        $end = strtotime($log[5]);
+        $log = $data[$i];
+
+        $start = Carbon::parse($log[4]);
+        $end = Carbon::parse($log[5]);
 
         // Ignore invalid logs
-        if ($start >= $end) {
+        if ($start->gte($end)) {
             continue;
+        }
+
+        // If there's a next log, trim this one's end back to the next
+        // log's start so overlapping fragments never reach the response.
+        if (isset($data[$i + 1])) {
+
+            $nextStart = Carbon::parse($data[$i + 1][4]);
+            $nextEnd = Carbon::parse($data[$i + 1][5]);
+
+            // Skip invalid next log entirely, but still keep processing current
+            if ($nextStart->gte($nextEnd)) {
+                $data[$i + 1] = null;
+            }
+
+            if ($end->gt($nextStart)) {
+                $end = $nextStart->copy();
+                $log[5] = $end->format('h:i A');
+            }
+
+            // After trimming, the log may have become zero/negative length; drop it.
+            if ($start->gte($end)) {
+                continue;
+            }
         }
 
         $result[] = $log;
 
-        if (!isset($data[$i + 1])) {
+        if (!isset($data[$i + 1]) || $data[$i + 1] === null) {
             continue;
         }
 
-        $nextStart = strtotime($data[$i + 1][4]);
+        $nextStart = Carbon::parse($data[$i + 1][4]);
+        $nextEnd = Carbon::parse($data[$i + 1][5]);
 
         // Skip invalid next log
-        if (strtotime($data[$i + 1][4]) >= strtotime($data[$i + 1][5])) {
+        if ($nextStart->gte($nextEnd)) {
             continue;
         }
 
-        // Only insert if there is a real gap
-        if ($end < $nextStart) {
+        // Only insert an "Off duty" filler if there is a real gap
+        if ($end->lt($nextStart)) {
 
-            $duration = gmdate("H:i:s", $nextStart - $end);
+            $durationSeconds = $nextStart->diffInSeconds($end);
+            $duration = secondsToTime($durationSeconds);
 
             $result[] = [
                 $duration,
                 "Off duty",
                 null,
                 $log[3],
-                date("h:i A", $end),
-                date("h:i A", $nextStart),
+                $end->format('h:i A'),
+                $nextStart->format('h:i A'),
                 $log[6],
                 $log[7],
                 $log[8],
