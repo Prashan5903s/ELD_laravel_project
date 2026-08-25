@@ -1235,7 +1235,8 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "odometer" => $odometer,
                     "location_start" => $locationStart,
                     "location_end" => $locationEnd,
-                    "engine_hour" => $engineHour
+                    "engine_hour" => $engineHour,
+                    "is_edit_allowed" => $data->system_entry === 1 && $log === 3
                 ];
             }
         }
@@ -1270,7 +1271,8 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "odometer" => $datass[$arrayLen - 1]['odometer'],
                     "location_start" => $datass[$arrayLen - 1]['location_start'],
                     "location_end" => $datass[$arrayLen - 1]['location_end'],
-                    "engine_hour" => $datass[$arrayLen - 1]['engineHour']
+                    "engine_hour" => $datass[$arrayLen - 1]['engineHour'],
+                    "is_edit_allowed" => true
                 ];
 
                 array_unshift($datass, $newLog);
@@ -1298,7 +1300,8 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                         "odometer" => $datass[$arrayLen - 1]['odometer'],
                         "location_start" => $datass[$arrayLen - 1]['location_start'],
                         "location_end" => $datass[$arrayLen - 1]['location_end'],
-                        "engine_hour" => $datass[$arrayLen - 1]['engineHour']
+                        "engine_hour" => $datass[$arrayLen - 1]['engineHour'],
+                        "is_edit_allowed" => true
                     ];
                 }
             } else {
@@ -1319,7 +1322,8 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                         "odometer" => $datass[$arrayLen - 1]['odometer'],
                         "location_start" => $datass[$arrayLen - 1]['location_start'],
                         "location_end" => $datass[$arrayLen - 1]['location_end'],
-                        "engine_hour" => $datass[$arrayLen - 1]['engineHour']
+                        "engine_hour" => $datass[$arrayLen - 1]['engineHour'],
+                        "is_edit_allowed" => true
                     ];
                 }
             }
@@ -1351,7 +1355,8 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "odometer" => "",
                     "location_start" => "",
                     "location_end" => "",
-                    "engine_hour" => ""
+                    "engine_hour" => "",
+                    "is_edit_allowed" => true
                 ];
             } elseif ($startTime < $currentTime) {
 
@@ -1369,7 +1374,9 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "odometer" => "",
                     "location_start" => "",
                     "location_end" => "",
-                    "engine_hour" => ""
+                    "engine_hour" => "",
+                    "is_edit_allowed" => true
+
                 ];
             } else {
 
@@ -1387,7 +1394,9 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "odometer" => "",
                     "location_start" => "",
                     "location_end" => "",
-                    "engine_hour" => ""
+                    "engine_hour" => "",
+                    "is_edit_allowed" => true
+
                 ];
             }
         }
@@ -1412,12 +1421,14 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                 "log_name" => "Off duty",
                 "start_log_time" => $startTime,
                 "end_log_time" => $currentStartTime,
-                'vehicle_name' => "abc",
+                'vehicle_name' => "",
                 'vehicle_id' => "",
                 "odometer" => "",
                 "location_start" => "",
                 "location_end" => "",
-                "engine_hour" => ""
+                "engine_hour" => "",
+                "is_edit_allowed" => true
+
             ];
         } else {
 
@@ -1434,12 +1445,14 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                 "log_name" => "Off duty",
                 "start_log_time" => $startTime,
                 "end_log_time" => $endTime,
-                'vehicle_name' => "abc",
+                'vehicle_name' => "",
                 'vehicle_id' => "",
                 "odometer" => "",
                 "location_start" => "",
                 "location_end" => "",
-                "engine_hour" => ""
+                "engine_hour" => "",
+                "is_edit_allowed" => true
+
             ];
         }
     }
@@ -1447,8 +1460,8 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
     if ($distinctVehicles && count($distinctVehicles) == 0) {
 
         $distinctVehicles[] = [
-            "id" => 1,
-            "name" => "abc",
+            "id" => "",
+            "name" => "",
 
         ];
     }
