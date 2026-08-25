@@ -756,16 +756,69 @@ class HOSMobileAPIController extends Controller
 
             $validated = $request->validate([
                 'log_date' => 'required|date',
-                'log_data' => 'required|array|min:1',
+                'log_data' => [
+                    'required',
+                    'array',
+                    'min:1',
+                    function ($attribute, $value, $fail) {
+
+                        $intervals = [];
+
+                        foreach ($value as $index => $log) {
+
+                            if (
+                                !isset($log['start_log_time']) ||
+                                !isset($log['end_log_time'])
+                            ) {
+                                continue;
+                            }
+
+                            $start = strtotime($log['start_log_time']);
+                            $end = strtotime($log['end_log_time']);
+
+                            // Already validated separately, but keep a safety check
+                            if ($start >= $end) {
+                                $fail("Log #" . ($index + 1) . " start_log_time must be before end_log_time.");
+                                return;
+                            }
+
+                            $intervals[] = [
+                                'index' => $index + 1,
+                                'start' => $start,
+                                'end' => $end,
+                            ];
+                        }
+
+                        // Sort by start time
+                        usort($intervals, function ($a, $b) {
+                            return $a['start'] <=> $b['start'];
+                        });
+
+                        // Check overlap
+                        for ($i = 1; $i < count($intervals); $i++) {
+
+                            $previous = $intervals[$i - 1];
+                            $current = $intervals[$i];
+
+                            if ($current['start'] < $previous['end']) {
+                                $fail(
+                                    "Log #{$current['index']} overlaps with Log #{$previous['index']}."
+                                );
+                                return;
+                            }
+                        }
+                    }
+                ],
+
                 'log_data.*.vehicle_id' => 'required|integer',
                 'log_data.*.shift_id' => 'required|integer',
                 'log_data.*.log_id' => 'nullable|integer',
                 'log_data.*.start_log_time' => 'required|date_format:H:i:s',
                 'log_data.*.end_log_time' => 'required|date_format:H:i:s',
                 'log_data.*.location_start' => 'required|string|max:255',
-                'log_data.*.location_end' => 'required|string|max:255',
+                'log_data.*.location_end' => 'nullable|string|max:255',
+                'log_data.*.odometer' => 'nullable|string|max:225',
                 'log_data.*.engine_hour' => 'required|string|max:255',
-                'log_data.*.odometer' => 'required|string|max:255',
                 'log_data.*.notes' => 'nullable|string|max:1000',
             ]);
 
@@ -826,8 +879,8 @@ class HOSMobileAPIController extends Controller
                         return [
                             'shift_id' => $log['shift_id'],
                             'location_start' => $log['location_start'],
-                            'location_end' => $log['location_end'],
-                            'odometer' => $log['odometer'],
+                            'location_end' => $log['location_end'] ?? null,
+                            'odometer' => $log['odometer'] ?? null,
                             'engine_hour' => $log['engine_hour'],
                             'notes' => $log['notes'] ?? null,
                             'start' => $start,
