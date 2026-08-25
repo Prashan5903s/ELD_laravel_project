@@ -598,46 +598,47 @@ function mobile_insertMissingLogs($data)
 
     // Sort by start time first
     usort($data, function ($a, $b) {
-        return strtotime($a['start_log_time']) <=> strtotime($b['start_log_time']);
+        return Carbon::parse($a['start_log_time'])
+            ->lte(Carbon::parse($b['start_log_time'])) ? -1 : 1;
     });
 
     $result = [];
 
     for ($i = 0; $i < count($data) - 1; $i++) {
 
+        $currentStart = Carbon::parse($data[$i]['start_log_time']);
+        $currentEnd = Carbon::parse($data[$i]['end_log_time']);
+
         // Skip invalid logs
-        if (
-            strtotime($data[$i]['start_log_time']) >=
-            strtotime($data[$i]['end_log_time'])
-        ) {
+        if ($currentStart->gte($currentEnd)) {
             continue;
         }
 
-        $currentEnd = strtotime($data[$i]['end_log_time']);
-        $nextStart = strtotime($data[$i + 1]['start_log_time']);
+        $nextStart = Carbon::parse($data[$i + 1]['start_log_time']);
 
-        if ($currentEnd > $nextStart) {
-            $data[$i]['end_log_time'] = date("H:i:s", $nextStart);
+        // If this log overlaps the next one, trim its end back to the
+        // next log's start so overlapping fragments never reach the response.
+        if ($currentEnd->gt($nextStart)) {
+            $data[$i]['end_log_time'] = $nextStart->format('H:i:s');
             $currentEnd = $nextStart;
         }
 
-        if (
-            strtotime($data[$i]['start_log_time']) >=
-            strtotime($data[$i]['end_log_time'])
-        ) {
+        // After trimming, the log may have become zero/negative length; drop it.
+        if ($currentStart->gte($currentEnd)) {
             continue;
         }
 
         $result[] = $data[$i];
 
-        if ($currentEnd < $nextStart) {
+        // Insert missing OFF DUTY log only when there is a real gap
+        if ($currentEnd->lt($nextStart)) {
 
             $result[] = [
                 "log_id" => $data[$i]["log_id"],
                 "shift_id" => 1,
                 "log_name" => "Off duty",
-                "start_log_time" => date("H:i:s", $currentEnd),
-                "end_log_time" => date("H:i:s", $nextStart),
+                "start_log_time" => $currentEnd->format('H:i:s'),
+                "end_log_time" => $nextStart->format('H:i:s'),
                 "vehicle_name" => $data[$i]["vehicle_name"],
                 "vehicle_id" => $data[$i]["vehicle_id"],
             ];
@@ -646,10 +647,7 @@ function mobile_insertMissingLogs($data)
 
     $last = end($data);
 
-    if (
-        strtotime($last['start_log_time']) 
-        strtotime($last['end_log_time'])
-    ) {
+    if (Carbon::parse($last['start_log_time'])->lt(Carbon::parse($last['end_log_time']))) {
         $result[] = $last;
     }
 
