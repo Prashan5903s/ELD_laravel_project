@@ -861,7 +861,7 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     "end_log_time" => $endTimeFormatted,
                     'vehicle_name' => $vehicle ? $vehicle->name : '',
                     'vehicle_id' => $vehicle ? $vehicle->id : "",
-                    "is_edit_allowed" => ($data->system_entry !== 1 && $log !== 3)
+                    "is_edit_allowed" => ($data->system_entry !== 1 || $log !== 3)
                 ];
             }
         }
@@ -1235,7 +1235,7 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "location_start" => $locationStart,
                     "location_end" => $locationEnd,
                     "engine_hour" => $engineHour,
-                    "is_edit_allowed" => $data->system_entry === 1 && $log === 3
+                    "is_edit_allowed" => $data->system_entry === 1 || $log === 3
                 ];
             }
         }
