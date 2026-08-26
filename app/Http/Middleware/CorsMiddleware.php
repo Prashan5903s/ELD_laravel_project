@@ -12,7 +12,7 @@ class CorsMiddleware
         $origin = $request->header('Origin');
 
         $allowedOrigins = [
-            'http://localhost:3000'
+            'https://uat-eld.vercel.app0'
         ];
 
         if ($request->isMethod('OPTIONS')) {
