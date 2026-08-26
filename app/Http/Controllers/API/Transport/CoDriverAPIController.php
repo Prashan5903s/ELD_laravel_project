@@ -42,7 +42,7 @@ class CoDriverAPIController extends Controller
         // If the user doesn't exist, return a 404 response
         return response()->json("User does not exist", 404);
     }
-    public function index($date, $id,)
+    public function index($date, $id, )
     {
         $coDriver = CoDriver::where('user_id', $id)->where('codriver_date', $date)->select('codriver_id')->first();
 
@@ -54,7 +54,9 @@ class CoDriverAPIController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create() {}
+    public function create()
+    {
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -64,8 +66,9 @@ class CoDriverAPIController extends Controller
      */
     public function store(Request $request, $date, $id)
     {
-        $startDay = Carbon::parse($date)->startOfDay();
-        $endDay = Carbon::parse($date)->endOfDay();
+
+        // Get the codrivers from the request
+        $codrivers = $request->co_drivers; // Assuming co_drivers is an array of codriver ids
 
         $authId = Auth::user()->id;
 
@@ -79,21 +82,6 @@ class CoDriverAPIController extends Controller
             $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
             $currentTime = Carbon::parse($currentTime);
 
-            $create = $startDay;
-            $last = $endDay;
-
-            $driverLog = DriverShiftLog::where('driver_id', $id)
-                ->where('is_add_approved', 1)
-                ->whereBetween('start_log_time', [$create, $last])
-                ->orderBy('start_log_time', "ASC")
-                ->first();
-
-            if (!$driverLog) {
-                return response()->json("This date has no log", 404);
-            }
-
-            // Get the codrivers from the request
-            $codrivers = $request->co_drivers; // Assuming co_drivers is an array of codriver ids
 
             $newCodrivers = $codrivers;
 
