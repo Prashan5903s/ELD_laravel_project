@@ -88,6 +88,7 @@ class CoDriverAPIController extends Controller
             $coDriver = CoDriver::where('user_id', $id)->where('codriver_date', $date)->first();
 
             if (!$coDriver) {
+
                 CoDriver::create([
                     'user_id' => $id,
                     'codriver_id' => implode(',', $codrivers),
@@ -96,6 +97,7 @@ class CoDriverAPIController extends Controller
                     'master_id' => $user->master_id,
                     'master_company_id' => $user->master_company_id,
                 ]);
+
             } else {
 
                 $existingCodrivers = explode(',', $coDriver->codriver_id);

@@ -21,6 +21,7 @@ use App\Http\Controllers\Mobile\API\DOTInspectionMobileAPIController;
 use App\Http\Controllers\Mobile\API\HOSUnsignedLogMobileAPIController;
 use App\Http\Controllers\Mobile\API\InspectionReportMobileAPIController;
 use App\Http\Controllers\Mobile\API\UserDeviceAPIController;
+use App\Http\Controllers\Mobile\API\ErrorAPIController;
 
 // Public routes
 Route::post('user/mobile/login', [LoginMobileAPIController::class, 'mobile_login']);
@@ -125,6 +126,8 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
     Route::post('group/assign/mobile/data/update/{id}', [GroupAssignMobileApiController::class, 'post_update']);
 
     Route::get('user/mobile/logout/{id}', [LoginMobileApiController::class, 'logout']);
+
+    Route::post("/error/data/log", [ErrorAPIController::class, 'error_data_save']);
 
 });
 
