@@ -14,11 +14,7 @@ class ErrorAPIController extends Controller
     public function error_data_save(Request $request)
     {
 
-        dd([
-            'all' => $request->all(),
-            'files' => $request->allFiles(),
-            'hasFile' => $request->hasFile('log_file'),
-        ]);
+        
 
         $validator = Validator::make($request->all(), [
             'device_platform' => 'required|string|in:android,ios',
