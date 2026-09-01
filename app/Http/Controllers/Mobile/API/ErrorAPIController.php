@@ -11,12 +11,11 @@ use Illuminate\Support\Facades\Auth;
 class ErrorAPIController extends Controller
 {
 
-
     public function error_data_save(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'device_platform' => 'required|string|in:android,ios',
-            'log_file' => 'required|file|mimes:txt,log,text|max:10240', // 10 MB
+            'log_file' => 'required|file|max:10240|mimetypes:text/plain,text/x-log,application/octet-stream',
         ]);
 
         if ($validator->fails()) {
@@ -27,12 +26,14 @@ class ErrorAPIController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
-        $userId = $user->id;
+        $userId = Auth::id();
 
         $file = $request->file('log_file');
 
+        $extension = $file->getClientOriginalExtension() ?: 'txt';
+
         $fileName = time() . '_' . $file->getClientOriginalName();
+
         $path = $file->storeAs('error_logs', $fileName, 'public');
 
         $errorLog = ErrorLog::create([
@@ -40,13 +41,12 @@ class ErrorAPIController extends Controller
             'file_name' => $fileName,
             'file_path' => $path,
             'created_by' => $userId,
-            'created_at' => now()
         ]);
 
         return response()->json([
             'status' => true,
             'message' => 'Log uploaded successfully.',
-            'data' => $errorLog
-        ]);
+            'data' => $errorLog,
+        ], 201);
     }
 }
