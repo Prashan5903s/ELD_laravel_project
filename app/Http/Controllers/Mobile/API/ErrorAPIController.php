@@ -18,7 +18,7 @@ class ErrorAPIController extends Controller
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
-                'log_file' => 'required|file|max:10240|mimetypes:text/plain,text/x-log,application/octet-stream',
+                'log_file' => 'required|file|max:10240|mimes:txt,log',
             ]);
 
             // Check uploaded file
