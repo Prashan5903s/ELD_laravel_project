@@ -15,6 +15,12 @@ class ErrorAPIController extends Controller
     {
         try {
 
+            dd([
+                "All_datta" => $request->all(),
+                "device_platform" => $request->device_platform,
+                "log_file" => $request->file('log_file'),
+            ]);
+
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
@@ -44,7 +50,7 @@ class ErrorAPIController extends Controller
 
             $users = Auth::user();
             $userId = $users->id;
-            
+
 
             $file = $request->file('log_file');
 
