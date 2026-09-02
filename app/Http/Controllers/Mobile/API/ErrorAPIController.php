@@ -16,10 +16,10 @@ class ErrorAPIController extends Controller
         try {
 
             // Validate Request
-            $request->validate([
-                'device_platform' => 'required|string|in:android,ios',
-                'log_file' => 'required|file',
-            ]);
+            // $request->validate([
+            //     'device_platform' => 'required|string|in:android,ios',
+            //     'log_file' => 'required|file',
+            // ]);
 
             // // Check uploaded file
             // if (!$request->hasFile('log_file') || !$request->file('log_file')->isValid()) {

@@ -37,7 +37,7 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::get('config/data', [AppConfigAPIController::class, 'app_config_data']);
 
-    Route::post("/check/user/access/token", [LoginMobileApiController::class, 'checkAccessToken']);
+    Route::post("check/user/access/token", [LoginMobileApiController::class, 'checkAccessToken']);
 
     Route::post("user/device/notify", [UserDeviceAPIController::class, "store"]);
 
