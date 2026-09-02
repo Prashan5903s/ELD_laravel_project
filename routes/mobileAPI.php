@@ -33,6 +33,8 @@ Route::post('reset/mobile/password/{email}', [UserMobileAPIController::class, 's
 // Protected routes (requires mobileAPI guard)
 Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
 
+    Route::post("/error/data/log", [ErrorAPIController::class, 'error_data_save']);
+
     Route::get('config/data', [AppConfigAPIController::class, 'app_config_data']);
 
     Route::post("/check/user/access/token", [LoginMobileApiController::class, 'checkAccessToken']);
@@ -126,8 +128,4 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
     Route::post('group/assign/mobile/data/update/{id}', [GroupAssignMobileApiController::class, 'post_update']);
 
     Route::get('user/mobile/logout/{id}', [LoginMobileApiController::class, 'logout']);
-
-    Route::post("/error/data/log", [ErrorAPIController::class, 'error_data_save']);
-
 });
-
