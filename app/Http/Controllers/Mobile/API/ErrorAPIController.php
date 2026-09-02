@@ -15,11 +15,6 @@ class ErrorAPIController extends Controller
     {
         try {
 
-            dd([
-                'device_platform' => $request->device_platform,
-                'log_file' => $request->file('log_file'),
-            ]);
-
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
