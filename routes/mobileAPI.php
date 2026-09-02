@@ -51,6 +51,7 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::post('hos/form/edit/activity', [ActivityLogMobileAPIController::class, 'store']);
 
+    // Error log route
     Route::post("error/data/log", [ErrorAPIController::class, 'error_data_save']);
     
     Route::get('hos/mobile/log/data', [HOSMobileAPIController::class, 'hos_mobile_data']);
