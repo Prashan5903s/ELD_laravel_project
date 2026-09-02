@@ -42,7 +42,9 @@ class ErrorAPIController extends Controller
                 ], 401);
             }
 
-            $userId = Auth::id();
+            $users = Auth::user();
+            $userId = $users->id;
+            
 
             $file = $request->file('log_file');
 
