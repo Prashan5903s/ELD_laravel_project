@@ -33,7 +33,7 @@ Route::post('reset/mobile/password/{email}', [UserMobileAPIController::class, 's
 // Protected routes (requires mobileAPI guard)
 Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
 
-    Route::post("/error/data/log", [ErrorAPIController::class, 'error_data_save']);
+    Route::post("error/data/log", [ErrorAPIController::class, 'error_data_save']);
 
     Route::get('config/data', [AppConfigAPIController::class, 'app_config_data']);
 
