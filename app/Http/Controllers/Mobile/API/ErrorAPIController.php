@@ -15,6 +15,11 @@ class ErrorAPIController extends Controller
     {
         try {
 
+            dd([
+                'device_platform' => $request->device_platform,
+                'log_file' => $request->file('log_file'),
+            ]);
+
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
@@ -57,7 +62,6 @@ class ErrorAPIController extends Controller
                 'message' => 'Log uploaded successfully.',
                 'data' => $errorLog,
             ], 201);
-
         } catch (ValidationException $e) {
 
             return response()->json([
@@ -65,7 +69,6 @@ class ErrorAPIController extends Controller
                 'message' => 'Validation failed.',
                 'errors' => $e->errors(),
             ], 422);
-
         } catch (\Exception $e) {
 
             Log::error('Error Log Upload Failed', [
