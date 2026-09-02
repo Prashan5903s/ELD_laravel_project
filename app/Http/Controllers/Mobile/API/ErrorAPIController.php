@@ -16,18 +16,18 @@ class ErrorAPIController extends Controller
         try {
 
             // Validate Request
-            // $request->validate([
-            //     'device_platform' => 'required|string|in:android,ios',
-            //     'log_file' => 'required|file',
-            // ]);
+            $request->validate([
+                'device_platform' => 'required|string|in:android,ios',
+                'log_file' => 'required|file',
+            ]);
 
-            // // Check uploaded file
-            // if (!$request->hasFile('log_file') || !$request->file('log_file')->isValid()) {
-            //     return response()->json([
-            //         'status' => false,
-            //         'message' => 'Invalid log file uploaded.',
-            //     ], 400);
-            // }
+            // Check uploaded file
+            if (!$request->hasFile('log_file') || !$request->file('log_file')->isValid()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid log file uploaded.',
+                ], 400);
+            }
 
             Log::info([
                 'auth_check' => Auth::check(),
