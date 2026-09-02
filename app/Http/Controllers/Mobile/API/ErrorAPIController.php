@@ -15,11 +15,15 @@ class ErrorAPIController extends Controller
     {
         try {
 
-            dd([
-                "All_datta" => $request->all(),
-                "device_platform" => $request->device_platform,
-                "log_file" => $request->file('log_file'),
+            Log::info('Error log upload request received', [
+                'user_id' => Auth::id(),
+                'request_data' => $request->all(),
             ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Error log upload request received.',
+            ], 200);
 
             // Validate Request
             $request->validate([
