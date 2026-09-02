@@ -29,6 +29,19 @@ class ErrorAPIController extends Controller
                 ], 400);
             }
 
+            Log::info([
+                'auth_check' => Auth::check(),
+                'user' => Auth::user(),
+                'id' => Auth::id(),
+            ]);
+
+            if (!Auth::check()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not authenticated.',
+                ], 401);
+            }
+
             $userId = Auth::id();
 
             $file = $request->file('log_file');
