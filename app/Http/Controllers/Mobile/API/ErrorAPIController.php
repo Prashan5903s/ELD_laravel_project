@@ -15,16 +15,6 @@ class ErrorAPIController extends Controller
     {
         try {
 
-            Log::info('Error log upload request received', [
-                'user_id' => Auth::id(),
-                'request_data' => $request->all(),
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Error log upload request received.',
-            ], 200);
-
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
