@@ -18,7 +18,7 @@ class ErrorAPIController extends Controller
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
-                'log_file' => 'required|string',
+                'log_file' => 'required|string|max:4294967295', // LONGTEXT max characters (theoretical)
             ]);
 
             if (!Auth::check()) {
