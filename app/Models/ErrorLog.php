@@ -13,6 +13,7 @@ class ErrorLog extends Model
 
     protected $fillable = [
         'device_platform',
+        'log_data',
         'file_name',
         'file_path',
         'created_by',

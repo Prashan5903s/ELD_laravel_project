@@ -18,21 +18,7 @@ class ErrorAPIController extends Controller
             // Validate Request
             $request->validate([
                 'device_platform' => 'required|string|in:android,ios',
-                'log_file' => 'required|file',
-            ]);
-
-            // Check uploaded file
-            if (!$request->hasFile('log_file') || !$request->file('log_file')->isValid()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid log file uploaded.',
-                ], 400);
-            }
-
-            Log::info([
-                'auth_check' => Auth::check(),
-                'user' => Auth::user(),
-                'id' => Auth::id(),
+                'log_file' => 'required|string',
             ]);
 
             if (!Auth::check()) {
@@ -45,27 +31,12 @@ class ErrorAPIController extends Controller
             $users = Auth::user();
             $userId = $users->id;
 
-
-            $file = $request->file('log_file');
-
-            // Generate safe filename
-            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $originalName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $originalName);
-
-            $extension = $file->getClientOriginalExtension() ?: 'txt';
-
-            $fileName = time() . '_' . $originalName . '.' . $extension;
-
-            // Store file
-            $path = $file->storeAs('error_logs', $fileName, 'public');
-
             // Save database record
             $errorLog = ErrorLog::create([
                 'device_platform' => $request->device_platform,
-                'file_name' => $fileName,
-                'file_path' => $path,
+                'log_data' => $request->log_file,
                 'created_by' => $userId,
-            ]);
+            ])->select("id", "device_platform", "log_data");
 
             return response()->json([
                 'status' => true,
