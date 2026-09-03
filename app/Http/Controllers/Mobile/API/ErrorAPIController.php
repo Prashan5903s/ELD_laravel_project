@@ -36,12 +36,16 @@ class ErrorAPIController extends Controller
                 'device_platform' => $request->device_platform,
                 'log_data' => $request->log_file,
                 'created_by' => $userId,
-            ])->select("id", "device_platform", "log_data");
+            ]);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Log uploaded successfully.',
-                'data' => $errorLog,
+                'data' => [
+                    'id' => $errorLog->id,
+                    'device_platform' => $errorLog->device_platform,
+                    'log_data' => $errorLog->log_data,
+                ],
             ], 201);
         } catch (ValidationException $e) {
 
