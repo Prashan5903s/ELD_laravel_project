@@ -967,7 +967,7 @@ if (!function_exists("check_eld_rules")) {
                                                         })
 
                                                         // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                                         ->whereRaw(
 
                                                             "IFNULL(end_log_time, ?) != ?",
@@ -1181,7 +1181,7 @@ if (!function_exists("check_eld_rules")) {
                                                             $subQuery
 
                                                                 // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                                                                 ->where(
 
                                                                     function ($overlapQuery) use ($create, $last, $currentTime) {
@@ -1216,7 +1216,7 @@ if (!function_exists("check_eld_rules")) {
                                                                 )
 
                                                                 // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                                                 ->whereRaw(
 
                                                                     "IFNULL(end_log_time, ?) != ?",
@@ -1475,7 +1475,7 @@ if (!function_exists("check_eld_rules")) {
                                                         $subQuery
 
                                                             // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                                                             ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                                                                 $overlapQuery
@@ -1506,7 +1506,7 @@ if (!function_exists("check_eld_rules")) {
                                                             })
 
                                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                                             ->whereRaw(
 
                                                                 "IFNULL(end_log_time, ?) != ?",
@@ -1687,7 +1687,7 @@ if (!function_exists("check_eld_rules")) {
                                                         $subQuery
 
                                                             // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                                                             ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                                                                 $overlapQuery
@@ -1718,7 +1718,7 @@ if (!function_exists("check_eld_rules")) {
                                                             })
 
                                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                                             ->whereRaw(
 
                                                                 "IFNULL(end_log_time, ?) != ?",
@@ -3454,7 +3454,7 @@ function driver_log_time_data($id, $time)
 
                 "note" =>
 
-                    $activityLog && $activityLog != "null"
+                $activityLog && $activityLog != "null"
 
                     ? $activityLog->notes
 
@@ -3552,7 +3552,7 @@ function driver_log_time_data($id, $time)
             $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                 // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                 $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                     $q->where("start_log_time", ">=", $create)
@@ -3560,7 +3560,7 @@ function driver_log_time_data($id, $time)
                         ->where("start_log_time", "<=", $last)
 
                         // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                         ->whereRaw("? != start_log_time", [$last])
 
                         ->whereRaw("IFNULL(end_log_time, ?) != ?", [
@@ -3592,7 +3592,7 @@ function driver_log_time_data($id, $time)
                                 ])
 
                                 // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                 ->whereRaw("? != start_log_time", [$last])
 
                                 ->whereRaw("IFNULL(end_log_time, ?) != ?", [
@@ -4106,7 +4106,7 @@ function driver_log_time_st_et($id, $time)
             $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                 // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                 $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                     $q->where("start_log_time", ">=", $create)
@@ -4114,7 +4114,7 @@ function driver_log_time_st_et($id, $time)
                         ->where("start_log_time", "<=", $last)
 
                         // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                         ->whereRaw("? != start_log_time", [$last])
 
                         ->whereRaw("IFNULL(end_log_time, ?) != ?", [
@@ -4146,7 +4146,7 @@ function driver_log_time_st_et($id, $time)
                                 ])
 
                                 // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                 ->whereRaw("? != start_log_time", [$last])
 
                                 ->whereRaw("IFNULL(end_log_time, ?) != ?", [
@@ -4222,7 +4222,7 @@ function driver_log_time_st_et($id, $time)
                         $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                             // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                             $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                 $q->where("start_log_time", ">=", $create)
@@ -4230,7 +4230,7 @@ function driver_log_time_st_et($id, $time)
                                     ->where("start_log_time", "<=", $last)
 
                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                     ->whereRaw("? != start_log_time", [$last])
 
                                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
@@ -4262,7 +4262,7 @@ function driver_log_time_st_et($id, $time)
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -4304,7 +4304,7 @@ function driver_log_time_st_et($id, $time)
                                 $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                                     // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                                     $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                         $q->where(
@@ -4328,7 +4328,7 @@ function driver_log_time_st_et($id, $time)
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -4364,7 +4364,7 @@ function driver_log_time_st_et($id, $time)
                                                     )
 
                                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                                     ->whereRaw(
 
                                                         "? != start_log_time",
@@ -4398,7 +4398,7 @@ function driver_log_time_st_et($id, $time)
                                 $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                                     // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                                     $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                         $q->where(
@@ -4422,7 +4422,7 @@ function driver_log_time_st_et($id, $time)
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -4458,7 +4458,7 @@ function driver_log_time_st_et($id, $time)
                                                     )
 
                                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                                     ->whereRaw(
 
                                                         "? != start_log_time",
@@ -4492,7 +4492,7 @@ function driver_log_time_st_et($id, $time)
                                 $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                                     // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                                     $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                         $q->where(
@@ -4516,7 +4516,7 @@ function driver_log_time_st_et($id, $time)
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -4552,7 +4552,7 @@ function driver_log_time_st_et($id, $time)
                                                     )
 
                                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                                     ->whereRaw(
 
                                                         "? != start_log_time",
@@ -5132,8 +5132,8 @@ function safety_score_calculation($userId, $start, $end)
     // Calculate percentages
     $percentages = collect($categories)->map(
         fn($count) => $totalDrivers > 0
-        ? round(($count / $totalDrivers) * 100, 2)
-        : 0
+            ? round(($count / $totalDrivers) * 100, 2)
+            : 0
     );
 
     if ($data && count($data) > 0) {
@@ -5517,7 +5517,7 @@ function cycle_calculation_dual(
                                 $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                                     // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                                     $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                         $q->where(
@@ -5541,7 +5541,7 @@ function cycle_calculation_dual(
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -5577,7 +5577,7 @@ function cycle_calculation_dual(
                                                     )
 
                                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                                     ->whereRaw(
 
                                                         "? != start_log_time",
@@ -5669,7 +5669,7 @@ function cycle_calculation_dual(
                                 $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                                     // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                                     $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                         $q->where(
@@ -5693,7 +5693,7 @@ function cycle_calculation_dual(
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -5729,7 +5729,7 @@ function cycle_calculation_dual(
                                                     )
 
                                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                                     ->whereRaw(
 
                                                         "? != start_log_time",
@@ -5818,7 +5818,7 @@ function cycle_calculation_dual(
                                 $subQuery
 
                                     // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                                     ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                                         $overlapQuery
@@ -5843,7 +5843,7 @@ function cycle_calculation_dual(
                                     })
 
                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
 
                                         $currentTime,
@@ -5943,7 +5943,7 @@ function cycle_calculation_dual(
                         $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                             // Check if there's overlap between the time range and log times, excluding exact matches with $create and $last
-    
+
                             $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                                 $q->where("start_log_time", ">=", $create)
@@ -5951,7 +5951,7 @@ function cycle_calculation_dual(
                                     ->where("start_log_time", "<=", $last)
 
                                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                                     ->whereRaw("? != start_log_time", [$last])
 
                                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
@@ -5983,7 +5983,7 @@ function cycle_calculation_dual(
                                             )
 
                                             // Exclude cases where $create equals end_log_time or $last equals start_log_time
-        
+
                                             ->whereRaw("? != start_log_time", [
 
                                                 $last,
@@ -6035,7 +6035,6 @@ function cycle_calculation_dual(
                 if (count($data[0]) > 0) {
 
                     $totalCycleData = array_merge($totalCycleData, $data[0]);
-
                 }
             }
         }
@@ -7246,15 +7245,15 @@ function safety_driver_score_calculation($userId, $start, $end)
 
                             100 -
 
-                            ($HAEarned +
+                                ($HAEarned +
 
-                                $HBEarned +
+                                    $HBEarned +
 
-                                $HSEarned +
+                                    $HSEarned +
 
-                                $HTEarned +
+                                    $HTEarned +
 
-                                $SPDEarned)
+                                    $SPDEarned)
 
                         )
 
@@ -7393,7 +7392,7 @@ function calculation_of_safety_events(
 
         $logEndTime = Carbon::parse($logEndTime);
 
-        $device = $data->vehicle->devices;
+        $device = $data->vehicle?->devices;
 
         if ($device && count($device) > 0) {
 
@@ -8027,7 +8026,7 @@ function safety_score_driver_calculation($id, $start = null, $end = null)
                 $subQuery
 
                     // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                     ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                         $overlapQuery
@@ -8044,7 +8043,7 @@ function safety_score_driver_calculation($id, $start = null, $end = null)
                     })
 
                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
 
                         $currentTime,
@@ -8205,7 +8204,7 @@ function event_per_driver_miles($id, $start, $end)
                 $subQuery
 
                     // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                     ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                         $overlapQuery
@@ -8222,7 +8221,7 @@ function event_per_driver_miles($id, $start, $end)
                     })
 
                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
 
                         $currentTime,
@@ -8373,7 +8372,7 @@ function driver_total_drive($id, $start, $end)
                 $subQuery
 
                     // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                     ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                         $overlapQuery
@@ -8390,7 +8389,7 @@ function driver_total_drive($id, $start, $end)
                     })
 
                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
 
                         $currentTime,
@@ -8539,7 +8538,7 @@ function calculating_event_safety_score_factor($id, $start, $end)
                 $subQuery
 
                     // Check for logs where any part of the range between $create and $last overlaps with start_log_time and end_log_time
-    
+
                     ->where(function ($overlapQuery) use ($create, $last, $currentTime) {
 
                         $overlapQuery
@@ -8556,7 +8555,7 @@ function calculating_event_safety_score_factor($id, $start, $end)
                     })
 
                     // Exclude cases where $create equals end_log_time or $last equals start_log_time
-    
+
                     ->whereRaw("IFNULL(end_log_time, ?) != ?", [
 
                         $currentTime,
@@ -8940,7 +8939,7 @@ function log_time_left_data($id)
                     ->where(function ($query) use ($create, $last, $currentTime) {
 
                         // Check if $create falls between start_log_time and end_log_time, or matches start_log_time
-    
+
                         $query
 
                             ->where(function ($subQuery) use ($create, $last, $currentTime) {
@@ -8965,9 +8964,9 @@ function log_time_left_data($id)
 
                                                     'COALESCE(end_log_time, "' .
 
-                                                    $currentTime .
+                                                        $currentTime .
 
-                                                    '")'
+                                                        '")'
 
                                                 ),
 
@@ -8982,7 +8981,7 @@ function log_time_left_data($id)
                             })
 
                             // Check if $last falls between start_log_time and end_log_time, or matches end_log_time
-    
+
                             ->orWhere(function ($subQuery) use ($last, $currentTime) {
 
                                 $subQuery
@@ -8997,9 +8996,9 @@ function log_time_left_data($id)
 
                                                     'COALESCE(end_log_time, "' .
 
-                                                    $currentTime .
+                                                        $currentTime .
 
-                                                    '")'
+                                                        '")'
 
                                                 ),
 
@@ -9016,9 +9015,9 @@ function log_time_left_data($id)
 
                                             'COALESCE(end_log_time, "' .
 
-                                            $currentTime .
+                                                $currentTime .
 
-                                            '")'
+                                                '")'
 
                                         ),
 
@@ -9043,7 +9042,7 @@ function log_time_left_data($id)
                     ->where(function ($query) use ($create, $last, $currentTime) {
 
                         // Check if $create falls between start_log_time and end_log_time, or matches start_log_time
-    
+
                         $query
 
                             ->where(function ($subQuery) use ($create, $last, $currentTime) {
@@ -9068,9 +9067,9 @@ function log_time_left_data($id)
 
                                                     'COALESCE(end_log_time, "' .
 
-                                                    $currentTime .
+                                                        $currentTime .
 
-                                                    '")'
+                                                        '")'
 
                                                 ),
 
@@ -9085,7 +9084,7 @@ function log_time_left_data($id)
                             })
 
                             // Check if $last falls between start_log_time and end_log_time, or matches end_log_time
-    
+
                             ->orWhere(function ($subQuery) use ($last, $currentTime) {
 
                                 $subQuery
@@ -9100,9 +9099,9 @@ function log_time_left_data($id)
 
                                                     'COALESCE(end_log_time, "' .
 
-                                                    $currentTime .
+                                                        $currentTime .
 
-                                                    '")'
+                                                        '")'
 
                                                 ),
 
@@ -9119,9 +9118,9 @@ function log_time_left_data($id)
 
                                             'COALESCE(end_log_time, "' .
 
-                                            $currentTime .
+                                                $currentTime .
 
-                                            '")'
+                                                '")'
 
                                         ),
 
@@ -9156,7 +9155,7 @@ function log_time_left_data($id)
                             ->where(function ($query) use ($create, $last, $currentTime) {
 
                                 // Check if $create falls between start_log_time and end_log_time, or matches start_log_time
-    
+
                                 $query
 
                                     ->where(function ($subQuery) use ($create, $last, $currentTime) {
@@ -9181,9 +9180,9 @@ function log_time_left_data($id)
 
                                                             'COALESCE(end_log_time, "' .
 
-                                                            $currentTime .
+                                                                $currentTime .
 
-                                                            '")'
+                                                                '")'
 
                                                         ),
 
@@ -9206,7 +9205,7 @@ function log_time_left_data($id)
                                     })
 
                                     // Check if $last falls between start_log_time and end_log_time, or matches end_log_time
-    
+
                                     ->orWhere(function ($subQuery) use ($last, $currentTime) {
 
                                         $subQuery
@@ -9229,9 +9228,9 @@ function log_time_left_data($id)
 
                                                             'COALESCE(end_log_time, "' .
 
-                                                            $currentTime .
+                                                                $currentTime .
 
-                                                            '")'
+                                                                '")'
 
                                                         ),
 
@@ -9248,9 +9247,9 @@ function log_time_left_data($id)
 
                                                     'COALESCE(end_log_time, "' .
 
-                                                    $currentTime .
+                                                        $currentTime .
 
-                                                    '")'
+                                                        '")'
 
                                                 ),
 
@@ -9393,9 +9392,9 @@ function log_time_left_data($id)
 
                                             )->diffInSeconds(
 
-                                                    Carbon::parse($vehStartTime)
+                                                Carbon::parse($vehStartTime)
 
-                                                );
+                                            );
 
                                             $totalCountDrive += $timSec;
                                         }
@@ -9514,9 +9513,9 @@ function log_time_left_data($id)
 
                                         )->diffInSeconds(
 
-                                                Carbon::parse($vehStartTime)
+                                            Carbon::parse($vehStartTime)
 
-                                            );
+                                        );
 
                                         $totalCountDrive += $timSec;
                                     }
@@ -10688,33 +10687,33 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
                         ->where("start_log_time", "<=", $last)
                         // Check if the log's end time is within the range of create and last
                         ->orWhere(function ($query) use ($create, $last, $currentTime) {
-                        $query
-                            ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-                                $currentTime,
-                                $create,
-                            ])
-                            ->whereRaw("IFNULL(end_log_time, ?) <= ?", [
-                                $currentTime,
-                                $last,
-                            ]);
-                    })
+                            $query
+                                ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
+                                    $currentTime,
+                                    $create,
+                                ])
+                                ->whereRaw("IFNULL(end_log_time, ?) <= ?", [
+                                    $currentTime,
+                                    $last,
+                                ]);
+                        })
                         // Check if the log encompasses the range between create and last
                         ->orWhere(function ($q2) use ($create, $last, $currentTime) {
-                        $q2->where("start_log_time", "<=", $create)
-                            ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-                                $currentTime,
-                                $last,
-                            ]);
-                    })
+                            $q2->where("start_log_time", "<=", $create)
+                                ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
+                                    $currentTime,
+                                    $last,
+                                ]);
+                        })
 
                         // Check if end_log_time equals start_log_time or create
-    
+
                         ->orWhere(function ($q3) use ($create) {
 
-                        $q3->whereColumn("end_log_time", "start_log_time")
+                            $q3->whereColumn("end_log_time", "start_log_time")
 
-                            ->orWhereRaw("end_log_time = ?", [$create]);
-                    });
+                                ->orWhereRaw("end_log_time = ?", [$create]);
+                        });
                 });
             });
         })
@@ -11029,32 +11028,32 @@ function hos_date_data($id, $startTime, $endTime)
                                 ->where("start_log_time", "<=", $last)
                                 // Check if the log's end time is within the range of create and last
                                 ->orWhere(function ($query) use ($create, $last, $currentTime) {
-                                $query
-                                    ->whereRaw(
-                                        "IFNULL(end_log_time, ?) >= ?",
-                                        [$currentTime, $create]
-                                    )
-                                    ->whereRaw(
-                                        "IFNULL(end_log_time, ?) <= ?",
-                                        [$currentTime, $last]
-                                    );
-                            })
+                                    $query
+                                        ->whereRaw(
+                                            "IFNULL(end_log_time, ?) >= ?",
+                                            [$currentTime, $create]
+                                        )
+                                        ->whereRaw(
+                                            "IFNULL(end_log_time, ?) <= ?",
+                                            [$currentTime, $last]
+                                        );
+                                })
                                 // Check if the log encompasses the range between create and last
                                 ->orWhere(function ($q2) use ($create, $last, $currentTime) {
-                                $q2->where("start_log_time", "<=", $create)
-                                    ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
-                                        $currentTime,
-                                        $last,
-                                    ]);
-                            })
+                                    $q2->where("start_log_time", "<=", $create)
+                                        ->whereRaw("IFNULL(end_log_time, ?) >= ?", [
+                                            $currentTime,
+                                            $last,
+                                        ]);
+                                })
                                 // Check if end_log_time equals start_log_time or create
                                 ->orWhere(function ($q3) use ($create) {
-                                $q3->whereColumn(
-                                    "end_log_time",
-                                    "start_log_time"
-                                )
-                                    ->orWhereRaw("end_log_time = ?", [$create]);
-                            });
+                                    $q3->whereColumn(
+                                        "end_log_time",
+                                        "start_log_time"
+                                    )
+                                        ->orWhereRaw("end_log_time = ?", [$create]);
+                                });
                         });
                     });
                 })
@@ -11334,8 +11333,6 @@ function hos_date_data($id, $startTime, $endTime)
                         }
                     }
                 }
-
-
             } else {
 
                 $datass = $startDataArr;
@@ -11517,17 +11514,17 @@ function hos_date_data_test($id, $startTime, $endTime)
                     $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                         // Check if there is any overlap between the time range and the log times
-    
+
                         $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                             // Check if the log's start time is within the range of create and last
-    
+
                             $q->where("start_log_time", ">=", $create)
 
                                 ->where("start_log_time", "<=", $last)
 
                                 // Check if the log's end time is within the range of create and last
-    
+
                                 ->orWhere(function ($query) use ($create, $last, $currentTime) {
 
                                     $query
@@ -11550,7 +11547,7 @@ function hos_date_data_test($id, $startTime, $endTime)
                                 })
 
                                 // Check if the log encompasses the range between create and last
-    
+
                                 ->orWhere(function ($q2) use ($create, $last, $currentTime) {
 
                                     $q2->where("start_log_time", "<=", $create)
@@ -11565,7 +11562,7 @@ function hos_date_data_test($id, $startTime, $endTime)
                                 })
 
                                 // Check if end_log_time equals start_log_time or create
-    
+
                                 ->orWhere(function ($q3) use ($create) {
 
                                     $q3->whereColumn(
@@ -13150,7 +13147,6 @@ function shift_cycle_start_check(
                 }
             }
         }
-
     } else {
 
         $shift_start = 1;
