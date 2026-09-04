@@ -815,11 +815,11 @@ class HOSMobileAPIController extends Controller
                 'log_data.*.log_id' => 'nullable|integer',
                 'log_data.*.start_log_time' => 'required|date_format:H:i:s',
                 'log_data.*.end_log_time' => 'required|date_format:H:i:s',
-                'log_data.*.location_start' => 'required|string|max:255',
+                'log_data.*.location_start' => 'nullable|string|max:255',
                 'log_data.*.location_end' => 'nullable|string|max:255',
                 'log_data.*.odometer' => 'nullable|string|max:225',
                 'log_data.*.engine_hour' => 'nullable|string|max:255',
-                'log_data.*.notes' => 'required|string|max:1000',
+                'log_data.*.notes' => 'nullable|string|max:1000',
             ]);
 
         } catch (ValidationException $e) {
