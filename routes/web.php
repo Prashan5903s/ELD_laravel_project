@@ -79,7 +79,7 @@ use App\Http\Controllers\SuperAdmin\Hardware\HardwareController;
 use App\Http\Controllers\SuperAdmin\Role\RolesController;
 
 use App\Http\Controllers\Transport\Document\DocumentController;
-
+use App\Http\Controllers\Transport\ErrorController;
 use App\Http\Controllers\Transport\Settings\Organization\GeneralController;
 
 use App\Http\Controllers\WhiteLabel\WhiteProfileController;
@@ -123,13 +123,11 @@ Route::get('/greet/{name}', function ($name) {
     // echo json_encode(conTimezone('America/Bahia', Carbon::now()));
 
     exit();
-
 });
 
 Route::get('white-label/dashboard', function () {
 
     return view('white-label.dashboard');
-
 })->middleware(['auth', 'verified', 'WC'])->name('white-label.dashboard');
 
 
@@ -166,11 +164,7 @@ Route::middleware(['auth', 'SA'])->group(function () {
 
     Route::resource('user-management/permissions/modules', ModulesController::class);
 
-
-
     Route::get('user-list/{ut}', [AdminProfileController::class, 'view_total'])->name('admin.view.total');
-
-
 
     Route::get('user/view', [UserViewController::class, 'index'])->name('user.view');
 
@@ -223,7 +217,6 @@ Route::middleware(['auth', 'SA'])->group(function () {
     Route::post('admin/profile/post/{id}', [AdminProfileController::class, 'post']);
 
     Route::resource('admin/software/version', VersionController::class)->names('admin.software.version');
-
 });
 
 
@@ -265,7 +258,6 @@ Route::middleware(['auth', 'WC'])->group(function () {
         Route::get('/edit/{id}', [CompanyController::class, 'edit'])->name('company.edit');
 
         Route::post('/post/{id}', [CompanyController::class, 'post'])->name('company.post.edit');
-
     });
 
 
@@ -275,7 +267,6 @@ Route::middleware(['auth', 'WC'])->group(function () {
     Route::get('white-label/profile/edit', [WhiteProfileController::class, 'edit'])->name('white-label.profile.edit');
 
     Route::post('white-label/profile/post/{id}', [WhiteProfileController::class, 'post'])->name('white-label.profile.post');
-
 });
 
 
@@ -319,9 +310,7 @@ Route::middleware(['auth', 'EC'])->group(function () {
         Route::get('/edit/{id}', [TransportController::class, 'edit'])->name('transport.edit');
 
         Route::post('/post/{id}', [TransportController::class, 'post'])->name('transport.post.edit');
-
     });
-
 });
 
 
@@ -353,46 +342,26 @@ Route::middleware(['auth', 'RS'])->group(function () {
         Route::get('/edit/{id}', [UserController::class, 'edit'])->name('user.edit');
 
         Route::post('/post/{id}', [UserController::class, 'post'])->name('user.post.edit');
-
     });
-
-
-
 });
 
 
 
 Route::middleware(['auth', 'TR'])->group(function () {
 
-
-
     Route::get('tr/shadow/login/{ut}/{id}', [DashboardController::class, 'changeUser'])->name('tr.user.change');
-
-
 
     Route::post('check-email', [DashboardController::class, 'checkMail']);
 
-
-
     Route::get('transport/dashboard', [DashboardController::class, 'default']);
-
-
 
     Route::get('tr/change/{id}', [DashboardController::class, 'chUsers'])->name('change.tr.user');
 
-
-
     Route::get('sse/send', [SSEController::class, 'index'])->name('sse.send.index');
-
-
 
     Route::get('get-vehicles', [DriverActivityController::class, 'get_vehicles']);
 
-
-
     Route::prefix('{lang?}/settings')->group(function () {
-
-
 
         // Additional routes with specific permissions
 
@@ -408,12 +377,7 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
         Route::delete('device/{device}', [DeviceController::class, 'destroy'])->name('setting.device.destroy');
 
-
-
-
-
         // Additional routes with specific permissions
-
         Route::get('user_roles', [UserRoleController::class, 'index'])->name('settings.organisation.userRoles.index')->middleware('permission:26');
 
         Route::get('user_roles/create', [UserRoleController::class, 'create'])->name('settings.organisation.userRoles.create')->middleware('permission:24');
@@ -425,50 +389,25 @@ Route::middleware(['auth', 'TR'])->group(function () {
         Route::put('user_roles/{userRole}', [UserRoleController::class, 'update'])->name('settings.organisation.userRoles.update')->middleware('permission:25');
 
         Route::delete('user_roles/{userRole}', [UserRoleController::class, 'destroy'])->name('settings.organisation.userRoles.destroy');
-
-
-
-
-
     });
-
-
 
     Route::get('data/date', [DriverController::class, 'data_date'])->name('data.dates.index');
 
-
-
     Route::post('generate-username', [DriverController::class, 'generate_username']);
-
-
 
     Route::post('check-username', [DriverController::class, 'check_username']);
 
-
-
     Route::post('editUsername', [DriverController::class, 'editUsername']);
-
-
 
     Route::prefix('{lang?}')->group(function () {
 
-
-
         Route::get('compliance', [ComplianceController::class, 'index'])->name('driver.compliance')->middleware('permission:17');
-
-
 
         Route::get('driver/{id}/log', [DriverController::class, 'driver_detail'])->name('driver.driver_detail');
 
-
-
         Route::get('transport/change/{id}', [DashboardController::class, 'changeId'])->name('transport.change');
 
-
-
         Route::get('transport/dashboard', [DashboardController::class, 'index'])->name('transport.dashboard');
-
-
 
         Route::get('report/data-log', [DriverController::class, 'data_log'])->name('driver.report.data')->middleware('permission:18');
 
@@ -476,7 +415,7 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
         Route::get('report/vechile', [DriverController::class, 'report_vechile'])->name('driver.report.vechile')->middleware('permission:19');
 
-
+        Route::get("report/error-log/data", [ErrorController::class, 'error_list'])->name('driver.report.error')->middleware('permission:19');
 
         Route::prefix('settings/organistaion')->group(function () {
 
@@ -503,9 +442,6 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
 
                 Route::post('add_post', [DriverController::class, 'add_post'])->name('setting.driver.organisation.add.post')->middleware('permission:27');
-
-
-
             });
 
 
@@ -523,9 +459,6 @@ Route::middleware(['auth', 'TR'])->group(function () {
             Route::put('driver-activity/{driverActivity}', [DriverActivityController::class, 'update'])->name('driver.activity.update')->middleware('permission:31');
 
             Route::delete('driver-activity/{driverActivity}', [DriverActivityController::class, 'destroy'])->name('driver.activity.destroy');
-
-
-
         });
 
 
@@ -535,9 +468,6 @@ Route::middleware(['auth', 'TR'])->group(function () {
 
 
         Route::get('/overview/map', [MapController::class, 'show_map'])->name('view.overview.map')->middleware('permission:16');
-
-
-
     });
 
 
@@ -553,7 +483,6 @@ Route::middleware(['auth', 'TR'])->group(function () {
         Route::get('/edit/{id}', [DriverController::class, 'edit'])->name('driver.auth.edit')->middleware('permission:11');
 
         Route::post('/post/{id}', [DriverController::class, 'post'])->name('driver.auth.post')->middleware('permission:11');
-
     });
 
 
@@ -605,9 +534,6 @@ Route::middleware(['auth', 'TR'])->group(function () {
         Route::put('addresses/{address}', [AddressesController::class, 'update'])->name('addresses.update')->middleware('permission:5');
 
         Route::delete('addresses/{address}', [AddressesController::class, 'destroy'])->name('addresses.destroy');
-
-
-
     });
 
 
@@ -619,13 +545,8 @@ Route::middleware(['auth', 'TR'])->group(function () {
         Route::prefix('settings/organization')->group(function () {
 
             Route::resource('general', GeneralController::class)->names('organization.general')->middleware('permission:23');
-
         });
-
     });
-
-
-
 });
 
 
@@ -643,12 +564,8 @@ Route::middleware(['auth', 'DR'])->group(function () {
 
 
     Route::resource('driver/documents', DriverDocumentController::class)->names('driver.documents');
-
-
-
 });
 
 
 
 require __DIR__ . '/auth.php';
-

@@ -180,7 +180,6 @@ class DriverController extends Controller
         $request->session()->flash('success', __('lang.saved'));
 
         return redirect()->route('driver.index', [$lang]);
-
     }
 
     public function edit(Request $request, $lang, $id)
@@ -222,7 +221,6 @@ class DriverController extends Controller
         $userInfo = UserInfo::where('user_id', $id)->first();
 
         return view('transport.driver.edit', compact('user', 'timezones', 'countries', 'userInfo', 'statess', 'lang', 'trans', 'HOS', 'EDSH', 'UE', 'location'));
-
     }
 
     public function post(Request $request, $lang, $id)
@@ -311,7 +309,6 @@ class DriverController extends Controller
         $request->session()->flash('success', __('lang.saved'));
 
         return redirect()->route('driver.index', [$lang]);
-
     }
 
     public function data_log(Request $request, $lang)
@@ -431,7 +428,6 @@ class DriverController extends Controller
                     $locations[] = ['latitude' => $latitude, 'longitude' => $longitude, 'name' => $locationName];
                 }
             }
-
         }
 
         // Pass the $ignitionOnIds array to the view if needed
@@ -470,7 +466,6 @@ class DriverController extends Controller
 
             // Convert Celsius to Fahrenheit
             $obdCoolant = ($obdCoolant * 9 / 5) + 32;
-
         } else {
             // If the key doesn't exist, assign a default value
             $obdCoolant = 'Data not received';
@@ -514,7 +509,6 @@ class DriverController extends Controller
         }
 
         return view('transport.enviorement.index', compact('data', 'obdCoolant', 'locations'));
-
     }
 
     public function driver_organisation(Request $request, $lang)
@@ -586,7 +580,6 @@ class DriverController extends Controller
         $vechile = Vehicle::all();
 
         return view('transport.settings.organization.driver.add', compact('driver', 'vechile'));
-
     }
 
     public function driver_organisation_edit(Request $request, $lang, $id)
@@ -615,7 +608,6 @@ class DriverController extends Controller
         $vechile = Vehicle::all();
 
         return view('transport.settings.organization.driver.edit', compact('data', 'driver', 'vechile'));
-
     }
 
     public function add_post(Request $request, $lang)
@@ -731,7 +723,6 @@ class DriverController extends Controller
         if (empty($lang)) {
 
             return redirect()->route('transport.dashboard', ['en']);
-
         }
 
         $language = Language::where('Short_name', $lang)->first();
@@ -741,11 +732,9 @@ class DriverController extends Controller
             App::setLocale('en');
 
             return redirect()->route('transport.dashboard', ['en']);
-
         } else {
 
             App::setLocale($lang);
-
         }
 
         $logDetails = [];
@@ -843,25 +832,20 @@ class DriverController extends Controller
                                 if ($aboveRow) {
 
                                     $aboveTime = $aboveRow->created_at;
-
                                 } else {
 
                                     if ($rowStatus == 1 || $rowStatus == 2 || $rowStatus == 5) {
 
                                         $aboveTime = $rowTime;
-
                                     } else {
                                         $aboveTime = Carbon::parse($currentTime);
                                     }
-
                                 }
 
                                 $timeInSeconds = $aboveTime->diffInSeconds($rowTime);
 
                                 $shiftTime += $timeInSeconds;
-
                             }
-
                         }
 
                         if ($cycleLogs) {
@@ -882,25 +866,20 @@ class DriverController extends Controller
                                 if ($aboveRow) {
 
                                     $aboveTime = $aboveRow->created_at;
-
                                 } else {
 
                                     if ($rowStatus == 1 || $rowStatus == 2 || $rowStatus == 5) {
 
                                         $aboveTime = $rowTime;
-
                                     } else {
                                         $aboveTime = Carbon::parse($currentTime);
                                     }
-
                                 }
 
                                 $timeInSeconds = $aboveTime->diffInSeconds($rowTime);
 
                                 $cycleTime += $timeInSeconds;
-
                             }
-
                         }
 
                         if ($driverLog) {
@@ -921,17 +900,14 @@ class DriverController extends Controller
                                 if ($aboveRow) {
 
                                     $aboveTime = $aboveRow->created_at;
-
                                 } else {
 
                                     if ($rowStatus == 1 || $rowStatus == 2 || $rowStatus == 5) {
 
                                         $aboveTime = $rowTime;
-
                                     } else {
                                         $aboveTime = Carbon::parse($currentTime);
                                     }
-
                                 }
 
 
@@ -958,25 +934,18 @@ class DriverController extends Controller
                                             if ($aboveDriveRow) {
 
                                                 $aboveVehicleTime = $aboveDriveRow->created_at;
-
                                             } else {
 
                                                 $aboveVehicleTime = $rowDriveTime;
-
                                             }
 
                                             $timeInSeconds = $aboveVehicleTime->diffInSeconds($rowDriveTime);
 
                                             $driveTime += $timeInSeconds;
-
                                         }
-
                                     }
-
                                 }
-
                             }
-
                         }
 
                         if ($ruleAssgn) {
@@ -1027,17 +996,14 @@ class DriverController extends Controller
                                             if ($aboveRow) {
 
                                                 $aboveTime = $aboveRow->created_at;
-
                                             } else {
 
                                                 if ($rowStatus == 1 || $rowStatus == 2 || $rowStatus == 5) {
 
                                                     $aboveTime = $rowTime;
-
                                                 } else {
                                                     $aboveTime = Carbon::parse($currentTime);
                                                 }
-
                                             }
 
 
@@ -1066,11 +1032,9 @@ class DriverController extends Controller
                                                             if ($aboveDriveRow) {
 
                                                                 $aboveVehicleTime = $aboveDriveRow->created_at;
-
                                                             } else {
 
                                                                 $aboveVehicleTime = $rowDriveTime;
-
                                                             }
 
                                                             $timeInSeconds = $aboveVehicleTime->diffInSeconds($rowDriveTime);
@@ -1124,11 +1088,8 @@ class DriverController extends Controller
                                                                             }
 
                                                                             $breakViolTime = $aboveDrTime->diffInSeconds($rowONTime);
-
                                                                         }
-
                                                                     }
-
                                                                 } else {
 
                                                                     $countBreak = 1;
@@ -1145,41 +1106,25 @@ class DriverController extends Controller
                                                                     }
                                                                     return $aboveDrTime;
                                                                     $breakViolTime = $aboveDrTime->diffInSeconds($rowONTime);
-
                                                                 }
-
                                                             }
-
                                                         }
-
                                                     }
-
                                                 }
-
                                             }
-
                                         }
-
                                     }
-
                                 }
-
                             }
-
                         }
-
                     }
-
                 } else {
 
                     $request->session()->flash('error', 'Unauthorized access');
 
                     return redirect(route('driver.index', [request()->lang]));
-
                 }
-
             }
-
         }
 
         if ($ruleAssgn) {
@@ -1199,11 +1144,9 @@ class DriverController extends Controller
                         $shiftViolTime = $maxShiftSec - $shiftTime;
 
                         $ViolShift = secondsToTime($shiftViolTime);
-
                     } else {
                         $ViolShift = '00h 00min';
                     }
-
                 } elseif ($rule->reason == 5) {
 
                     $maxHr = $rule->max_hour_limit;
@@ -1215,11 +1158,9 @@ class DriverController extends Controller
                         $violCycleTime = $maxCycleSec - $cycleTime;
 
                         $violCycleTime = secondsToTime($violCycleTime);
-
                     } else {
                         $violCycleTime = '00:00:00';
                     }
-
                 } elseif ($rule->reason == 2) {
 
                     $maxHr = $rule->max_hour_limit;
@@ -1231,11 +1172,9 @@ class DriverController extends Controller
                         $violCycleTime = $maxCycleSec - $cycleTime;
 
                         $violCycleTime = secondsToTime($violCycleTime);
-
                     } else {
                         $violCycleTime = '00h 00min';
                     }
-
                 } elseif ($rule->reason == 3) {
 
                     $maxHr = $rule->max_hour_limit;
@@ -1247,17 +1186,12 @@ class DriverController extends Controller
                         $violDriveTime = $maxDriveSec - $cycleTime;
 
                         $violDriveTime = secondsToTime($violDriveTime);
-
                     } else {
 
                         $violDriveTime = '00:00:00';
-
                     }
-
                 }
-
             }
-
         }
 
         $violBreakTime = secondsToTime($breakViolTime);
@@ -1265,7 +1199,6 @@ class DriverController extends Controller
         return [$ViolShift, $violCycleTime, $violDriveTime, $violBreakTime];
 
         return redirect(route('driver.driver_detail', [$lang]));
-
     }
     public function data_date(Request $request)
     {
@@ -1404,7 +1337,6 @@ class DriverController extends Controller
                                             'created' => $formattedTime,
                                             'time' => "{$hours}h {$formattedMinutes}m",
                                         ];
-
                                     }
                                 }
                             }
@@ -1416,7 +1348,6 @@ class DriverController extends Controller
 
         // Return the log data as JSON
         return response()->json($data);
-
     }
 
     public function generate_username(Request $request)
@@ -1430,7 +1361,6 @@ class DriverController extends Controller
 
 
         return response()->json(['username' => $username]);
-
     }
 
     public function check_username(Request $request)
@@ -1454,5 +1384,4 @@ class DriverController extends Controller
 
         return response()->json(['unique' => $isUnique]);
     }
-
 }
