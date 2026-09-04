@@ -580,8 +580,6 @@ class DriverAPIController extends Controller
     public function graph_chart_date_data(Request $request, $id, $date)
     {
 
-        $user = User::where('user_type', 'U')->where('id', $id)->first();
-
         $userInfo = UserInfo::where('user_id', $id)->first();
 
         $timeZone = $userInfo->home_terminal_timezone;

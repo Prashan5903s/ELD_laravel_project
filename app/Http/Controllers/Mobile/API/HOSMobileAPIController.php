@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Mobile\API;
 
 use App\Http\Controllers\Controller;
@@ -122,7 +123,6 @@ class HOSMobileAPIController extends Controller
                                 'shift_start' => $shift_btw_start,
                                 'cycle_start' => $cycle_btw_start,
                             ]);
-
                         }
                     }
 
@@ -154,7 +154,6 @@ class HOSMobileAPIController extends Controller
                             'odometer_end' => $odometer,
                             'engineHour' => $engineHour,
                         ]);
-
                     }
 
                     $startData = shift_cycle_start_check($updatedLatestLog, $currentTime, $locationName, $rule_ids, 0);
@@ -185,7 +184,6 @@ class HOSMobileAPIController extends Controller
                     if ($bluetoothLog) {
 
                         $vehicleId = $bluetoothLog->vehicle_id;
-
                     } else {
 
                         $vehicleIds = VehicleAssign::where('driver_id', $driverId)
@@ -227,7 +225,6 @@ class HOSMobileAPIController extends Controller
                         'statusCode' => 200,
                         'message' => 'Saved successfully',
                     ], 200);
-
                 }
             } else {
 
@@ -263,7 +260,6 @@ class HOSMobileAPIController extends Controller
             $masterId = $user->created_by;
 
             //Helper function name hos_date_data
-
             $userDriver = User::where("user_type", "U")
                 ->where("id", "!=", $id)
                 ->where("master_id", $user->master_id)
@@ -342,7 +338,6 @@ class HOSMobileAPIController extends Controller
                         $finalData["start_location"] = $graphData[7];
                         $finalData['location_end'] = $graphData[8];
                         $finalData['engine_hour'] = $graphData[9];
-
                     }
 
                     $datas[] = [
@@ -351,7 +346,6 @@ class HOSMobileAPIController extends Controller
 
                     ];
                 }
-
             }
 
             // $datas = hos_date_data($id, $start, $end);
@@ -506,7 +500,6 @@ class HOSMobileAPIController extends Controller
                     'lat' => 'required|numeric',
                     'long' => 'required|numeric',
                 ]);
-
             } catch (ValidationException $e) {
 
                 return response()->json([
@@ -515,7 +508,6 @@ class HOSMobileAPIController extends Controller
                     'message' => 'Validation failed',
                     'errors' => $e->errors(),
                 ], 422);
-
             }
 
             $id = $request->shift_id;
@@ -598,7 +590,6 @@ class HOSMobileAPIController extends Controller
                                 'shift_start' => $shift_btw_start,
                                 'cycle_start' => $cycle_btw_start,
                             ]);
-
                         }
                     }
 
@@ -630,7 +621,6 @@ class HOSMobileAPIController extends Controller
                             'odometer_end' => $odometer,
                             'engineHour' => $engineHour,
                         ]);
-
                     }
 
                     $startData = shift_cycle_start_check($updatedLatestLog, $currentTime, $locationName, $rule_ids, 0);
@@ -670,7 +660,6 @@ class HOSMobileAPIController extends Controller
                     if ($bluetoothLog) {
 
                         $vehicleId = $bluetoothLog->vehicle_id;
-
                     } else {
 
                         $vehicleIds = VehicleAssign::where('driver_id', $driverId)
@@ -721,7 +710,6 @@ class HOSMobileAPIController extends Controller
                             'shift_id' => $id,
                         ],
                     ], 200);
-
                 }
             } else {
 
@@ -821,7 +809,6 @@ class HOSMobileAPIController extends Controller
                 'log_data.*.engine_hour' => 'nullable|string|max:255',
                 'log_data.*.notes' => 'nullable|string|max:1000',
             ]);
-
         } catch (ValidationException $e) {
 
             return response()->json([
@@ -982,7 +969,6 @@ class HOSMobileAPIController extends Controller
                 'message' => 'All logs processed successfully.',
                 'data' => $finalData
             ]);
-
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'failure',

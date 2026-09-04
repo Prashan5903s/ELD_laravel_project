@@ -10791,13 +10791,10 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
         if ($arrayLen > 0) {
 
             $startTime = Carbon::parse($startTime)->startOfDay();
-
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
 
             $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
-
             $currentHI = Carbon::parse($currentTime)->format("H:i:s");
-
             $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
             $startTimeLogData = $datass[0][3];
@@ -10816,28 +10813,21 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
                 array_unshift($datass, $newLog);
             }
 
-            $arrayLogLength = count($datass);
-
-            $lastLogData = $datass[$arrayLogLength - 1][4];
+            // Get the actual last index after any modification
+            $lastIndex = count($datass) - 1;
+            $lastLogData = $datass[$lastIndex][4];
 
             if ($startTime == $currentTimeStart) {
 
                 if ($lastLogData != $currentHI) {
 
                     $datass[] = [
-
                         116,
-
                         1,
-
                         "Off duty",
-
-                        $datass[$arrayLen - 1][4],
-
+                        $lastLogData,
                         $currentHI,
-
-                        $datass[$arrayLen - 1][5],
-
+                        $datass[$lastIndex][5],
                     ];
                 }
             } else {
@@ -10845,32 +10835,22 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
                 if ($lastLogData != "23:59:59") {
 
                     $datass[] = [
-
                         116,
-
                         1,
-
                         "Off duty",
-
-                        $datass[$arrayLen - 1][4],
-
+                        $lastLogData,
                         "23:59:59",
-
-                        $datass[$arrayLen - 1][5],
-
+                        $datass[$lastIndex][5],
                     ];
                 }
             }
         } else {
 
             $startTime = Carbon::parse($startTime)->startOfDay();
-
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
 
             $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
-
             $currentHI = Carbon::parse($currentTime)->format("H:i:s");
-
             $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
             if ($startTime == $currentTimeStart) {
