@@ -304,8 +304,6 @@ class HOSMobileAPIController extends Controller
 
                     $graphData = mobile_graph_hos_log_data($id, $startDay, $endDay, $currentTime, $masterId);
 
-                    return response()->json($graphData);
-
                     $finalData = [];
 
                     if ($graphData && count($graphData) >= 3) {
