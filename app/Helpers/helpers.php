@@ -11202,13 +11202,9 @@ function hos_date_data($id, $startTime, $endTime)
 
                         $startDuration = secondsToTime($startDuration);
 
-                        $startDurationTime = Carbon::parse($start)->format(
-                            "h:i A"
-                        );
+                        $startDurationTime = Carbon::parse($start)->format("h:i A");
 
-                        $endTimeDuration = Carbon::parse($firstDataLog)->format(
-                            "h:i A"
-                        );
+                        $endTimeDuration = Carbon::parse($firstDataLog)->format("h:i A");
 
                         $newLog = [
                             $startDuration,
@@ -11227,13 +11223,13 @@ function hos_date_data($id, $startTime, $endTime)
                     }
                 }
 
-                $startDayTime = Carbon::parse($start)->startOfDay();
-
-                $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
-
-                $currentHI = Carbon::parse($currentTime)->format("h:i A");
-
+                // Recalculate after array_unshift()
                 $arrayLogLen = count($datass);
+                $lastIndex = $arrayLogLen - 1;
+
+                $startDayTime = Carbon::parse($start)->startOfDay();
+                $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
+                $currentHI = Carbon::parse($currentTime)->format("h:i A");
 
                 if ($startDayTime == $currentTimeStart) {
 
@@ -11249,66 +11245,61 @@ function hos_date_data($id, $startTime, $endTime)
 
                     $startLogTimeStart = $startLogTimeData[1];
 
-                    $currentAddressData = $datass[$arrayLogLen - 1][6];
+                    $currentAddressData = $datass[$lastIndex][6];
 
                     $addressName = null;
 
                     if (count($currentAddressData) > 0) {
-
                         $addressName = fetchFullAddressName(
-
                             $currentAddressData[0],
-
                             $currentAddressData[1]
-
                         );
                     }
 
-                    if ($datass[$arrayLogLen - 1][5] != $currentHI) {
+                    if ($datass[$lastIndex][5] != $currentHI) {
 
-                        $currentDuration = $currentTime->diffInSeconds(
-                            $startLogTimeStart
-                        );
+                        $currentDuration = $currentTime->diffInSeconds($startLogTimeStart);
 
                         $currentDuration = secondsToTime($currentDuration);
 
                         $datass[] = [
-                            $currentDuration, // Correct duration
-                            "Off duty", // Status
-                            $datass[$arraylen - 1][2], // Same null value
-                            $datass[$arraylen - 1][3], // Same location
-                            $datass[$arraylen - 1][5], // Start time of the new log
-                            $currentHI, // End time of the new log
-                            $datass[$arraylen - 1][6], // Same GPS coordinates
-                            $datass[$arraylen - 1][7], // Same distance
-                            $datass[$arraylen - 1][8],
-                            $datass[$arraylen - 1][9],
+                            $currentDuration,
+                            "Off duty",
+                            $datass[$lastIndex][2],
+                            $datass[$lastIndex][3],
+                            $datass[$lastIndex][5], // Last log end time
+                            $currentHI,
+                            $datass[$lastIndex][6],
+                            $datass[$lastIndex][7],
+                            $datass[$lastIndex][8],
+                            $datass[$lastIndex][9],
                         ];
                     }
                 } else {
 
-                    if ($datass[$arrayLogLen - 1][5] != "12:59 PM") {
+                    if ($datass[$lastIndex][5] != "11:59 PM") {
+
                         $start = Carbon::parse($start);
                         $end = Carbon::parse($end);
                         $lastTimeData = Carbon::parse($lastTimeData);
-                        $duration = $end->diffInSeconds($lastTimeData); // Ensure correct duration format
+
+                        $duration = $end->diffInSeconds($lastTimeData);
 
                         if ($duration > 0) {
 
                             $duration = secondsToTime($duration);
 
-                            // Insert the missing log with the calculated duration
                             $datass[] = [
-                                $duration, // Correct duration
-                                "Off duty", // Status
-                                $datass[$arraylen - 1][2], // Same null value
-                                $datass[$arraylen - 1][3], // Same location
-                                $datass[$arraylen - 1][4], // Start time of the new log
-                                "12:59 PM", // End time of the new log
-                                [], // Same GPS coordinates
-                                $datass[$arraylen - 1][7], // Same distance
-                                $datass[$arraylen - 1][8],
-                                $datass[$arraylen - 1][9],
+                                $duration,
+                                "Off duty",
+                                $datass[$lastIndex][2],
+                                $datass[$lastIndex][3],
+                                $datass[$lastIndex][5], // Last log end time
+                                "11:59 PM",
+                                [],
+                                $datass[$lastIndex][7],
+                                $datass[$lastIndex][8],
+                                $datass[$lastIndex][9],
                             ];
                         }
                     }
