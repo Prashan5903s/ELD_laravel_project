@@ -750,17 +750,17 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
             $query->where(function ($subQuery) use ($create, $last, $currentTime) {
 
                 // Check if there is any overlap between the time range and the log times
-    
+
                 $subQuery->where(function ($q) use ($create, $last, $currentTime) {
 
                     // Check if the log's start time is within the range of create and last
-    
+
                     $q->where("start_log_time", ">=", $create)
 
                         ->where("start_log_time", "<=", $last)
 
                         // Check if the log's end time is within the range of create and last
-    
+
                         ->orWhere(function ($query) use ($create, $last, $currentTime) {
 
                             $query
@@ -783,7 +783,7 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                         })
 
                         // Check if the log encompasses the range between create and last
-    
+
                         ->orWhere(function ($q2) use ($create, $last, $currentTime) {
 
                             $q2->where("start_log_time", "<=", $create)
@@ -798,7 +798,7 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                         })
 
                         // Check if end_log_time equals start_log_time or create
-    
+
                         ->orWhere(function ($q3) use ($create) {
 
                             $q3->whereColumn("end_log_time", "start_log_time")
@@ -928,7 +928,6 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                         'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
                         "is_edit_allowed" => true
                     ];
-
                 }
             } else {
 
@@ -947,7 +946,6 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                         'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
                         "is_edit_allowed" => true
                     ];
-
                 }
             }
         } else {
@@ -977,7 +975,6 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     'vehicle_id' => "",
                     "is_edit_allowed" => true
                 ];
-
             } elseif ($startTime < $currentTime) {
 
                 $totalTimeDiffInSec += Carbon::parse($startTimeHI)
@@ -993,7 +990,6 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     'vehicle_id' => "",
                     "is_edit_allowed" => true
                 ];
-
             } else {
 
                 $totalTimeDiffInSec += Carbon::parse($startTimeHI)
@@ -1009,7 +1005,6 @@ function mobile_graph_hos_chart($id, $startTime, $endTime, $currentTime, $master
                     'vehicle_id' => "",
                     "is_edit_allowed" => true
                 ];
-
             }
         }
     } else {
@@ -1277,29 +1272,30 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                 array_unshift($datass, $newLog);
             }
 
-            $arrayLogLength = count($datass);
+            // Recalculate last index after modifying the array
+            $lastIndex = count($datass) - 1;
 
-            $lastLogData = $datass[$arrayLogLength - 1]["end_log_time"];
+            $lastLogData = $datass[$lastIndex]["end_log_time"];
 
             if ($startTime == $currentTimeStart) {
 
                 if ($lastLogData != $currentHI) {
 
-                    $totalTimeDiffInSec += Carbon::parse($datass[$arrayLen - 1]['end_log_time'])
+                    $totalTimeDiffInSec += Carbon::parse($lastLogData)
                         ->diffInSeconds(Carbon::parse($currentHI));
 
                     $datass[] = [
                         "log_id" => 116,
                         "shift_id" => 1,
                         "log_name" => "Off duty",
-                        "start_log_time" => $datass[$arrayLen - 1]['end_log_time'],
+                        "start_log_time" => $lastLogData,
                         "end_log_time" => $currentHI,
-                        'vehicle_name' => $datass[$arrayLen - 1]["vehicle_name"],
-                        'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
-                        "odometer" => $datass[$arrayLen - 1]['odometer'],
-                        "location_start" => $datass[$arrayLen - 1]['location_start'],
-                        "location_end" => $datass[$arrayLen - 1]['location_end'],
-                        "engine_hour" => $datass[$arrayLen - 1]['engine_hour'],
+                        'vehicle_name' => $datass[$lastIndex]["vehicle_name"],
+                        'vehicle_id' => $datass[$lastIndex]['vehicle_id'],
+                        "odometer" => $datass[$lastIndex]['odometer'],
+                        "location_start" => $datass[$lastIndex]['location_start'],
+                        "location_end" => $datass[$lastIndex]['location_end'],
+                        "engine_hour" => $datass[$lastIndex]['engine_hour'],
                         "is_edit_allowed" => true
                     ];
                 }
@@ -1307,21 +1303,21 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
 
                 if ($lastLogData != "23:59:59") {
 
-                    $totalTimeDiffInSec += Carbon::parse($datass[$arrayLen - 1]['end_log_time'])
+                    $totalTimeDiffInSec += Carbon::parse($lastLogData)
                         ->diffInSeconds(Carbon::parse("23:59:59"));
 
                     $datass[] = [
                         "log_id" => 116,
                         "shift_id" => 1,
                         "log_name" => "Off duty",
-                        "start_log_time" => $datass[$arrayLen - 1]['end_log_time'],
+                        "start_log_time" => $lastLogData,
                         "end_log_time" => "23:59:59",
-                        'vehicle_name' => $datass[$arrayLen - 1]['vehicle_name'],
-                        'vehicle_id' => $datass[$arrayLen - 1]['vehicle_id'],
-                        "odometer" => $datass[$arrayLen - 1]['odometer'],
-                        "location_start" => $datass[$arrayLen - 1]['location_start'],
-                        "location_end" => $datass[$arrayLen - 1]['location_end'],
-                        "engine_hour" => $datass[$arrayLen - 1]['engine_hour'],
+                        'vehicle_name' => $datass[$lastIndex]['vehicle_name'],
+                        'vehicle_id' => $datass[$lastIndex]['vehicle_id'],
+                        "odometer" => $datass[$lastIndex]['odometer'],
+                        "location_start" => $datass[$lastIndex]['location_start'],
+                        "location_end" => $datass[$lastIndex]['location_end'],
+                        "engine_hour" => $datass[$lastIndex]['engine_hour'],
                         "is_edit_allowed" => true
                     ];
                 }
@@ -1329,13 +1325,9 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
         } else {
 
             $startTime = Carbon::parse($startTime)->startOfDay();
-
             $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
-
             $startTimeHI = Carbon::parse($startTime)->format("H:i:s");
-
             $currentHI = Carbon::parse($currentTime)->format("H:i:s");
-
             $endTimeHI = Carbon::parse($endTime)->format("H:i:s");
 
             if ($startTime == $currentTimeStart) {
@@ -1375,7 +1367,6 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "location_end" => "",
                     "engine_hour" => "",
                     "is_edit_allowed" => true
-
                 ];
             } else {
 
@@ -1395,10 +1386,10 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                     "location_end" => "",
                     "engine_hour" => "",
                     "is_edit_allowed" => true
-
                 ];
             }
         }
+
     } else {
 
         $currentStartTime = Carbon::parse($currentTime)->startOfDay();
@@ -1598,7 +1589,6 @@ function check_hos_mobile_log_driver_exist(
             "beforeLog" => $beforeLog,
             "afterLog" => $afterLog,
         ];
-
     } else {
 
         $data = [
@@ -1608,7 +1598,6 @@ function check_hos_mobile_log_driver_exist(
             "beforeLog" => $beforeLog,
             "afterLog" => $afterLog,
         ];
-
     }
 
     return $data;
@@ -1861,7 +1850,6 @@ function hod_log_mobile_time_data_edit(
         ]);
 
         $applyShiftCycle($newLog);
-
     });
 
     return true;
