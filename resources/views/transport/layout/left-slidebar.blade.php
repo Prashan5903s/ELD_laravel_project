@@ -247,7 +247,7 @@
     @endif
     @if (isset($permissions) && ($permissions->contains(18) || $permissions->contains(19)))
     <div data-kt-menu-trigger="click"
-        class="menu-item menu-accordion {{ in_array(Route::currentRouteName(), ['driver.report.data', 'driver.report.error', 'driver.report.bluetooth' 'driver.report.vechile']) ? 'show' : '' }}">
+        class="menu-item menu-accordion {{ in_array(Route::currentRouteName(), ['driver.report.data', 'driver.report.error', 'driver.report.bluetooth', 'driver.report.vechile']) ? 'show' : '' }}">
         <!--begin:Menu link-->
         <span class="menu-link">
             <span class="menu-icon">
