@@ -11781,15 +11781,10 @@ function hos_date_data_test($id, $startTime, $endTime)
             if ($arraylen > 0) {
 
                 $firstDataLog = $datass[0][4];
-
                 $notesLog = $datass[0][2];
-
                 $vehicleLog = $datass[0][3];
-
                 $locationLog = $datass[0][6];
-
                 $odometerLog = $datass[0][7];
-
                 $startLogTime =
 
                     Carbon::parse($firstDataLog)->format("h:i A") != "12:00 AM";
