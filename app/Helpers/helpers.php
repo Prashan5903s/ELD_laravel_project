@@ -11171,94 +11171,9 @@ function hos_date_data($id, $startTime, $endTime)
                 }
             }
 
-            $datass = insertHOSMissingLogs($datass);
-
-            $arraylen = count($datass);
-
-            if ($arraylen > 0) {
-
-                $firstStart = Carbon::parse($datass[0][4]);
-
-                if (!$firstStart->equalTo($start)) {
-
-                    $duration = $start->diffInSeconds($firstStart);
-
-                    if ($duration > 0) {
-
-                        array_unshift($datass, [
-                            secondsToTime($duration),
-                            "Off duty",
-                            $datass[0][2],
-                            $datass[0][3],
-                            $start->format("Y-m-d H:i:s"),
-                            $firstStart->format("Y-m-d H:i:s"),
-                            $datass[0][6],
-                            $datass[0][7],
-                            $datass[0][8],
-                            $datass[0][9],
-                        ]);
-                    }
-                }
-
-                $lastIndex = count($datass) - 1;
-
-                $lastEnd = Carbon::parse($datass[$lastIndex][5]);
-
-                if ($start->isToday()) {
-
-                    if ($lastEnd->lt($currentTime)) {
-
-                        $duration = $lastEnd->diffInSeconds($currentTime);
-
-                        if ($duration > 0) {
-
-                            $datass[] = [
-                                secondsToTime($duration),
-                                "Off duty",
-                                $datass[$lastIndex][2],
-                                $datass[$lastIndex][3],
-                                $lastEnd->format("Y-m-d H:i:s"),
-                                $currentTime->format("Y-m-d H:i:s"),
-                                $datass[$lastIndex][6],
-                                $datass[$lastIndex][7],
-                                $datass[$lastIndex][8],
-                                $datass[$lastIndex][9],
-                            ];
-                        }
-                    }
-                } else {
-
-                    $endOfDay = $start->copy()->endOfDay();
-
-                    if ($lastEnd->lt($endOfDay)) {
-
-                        $duration = $lastEnd->diffInSeconds($endOfDay);
-
-                        if ($duration > 0) {
-
-                            $datass[] = [
-                                secondsToTime($duration),
-                                "Off duty",
-                                $datass[$lastIndex][2],
-                                $datass[$lastIndex][3],
-                                $lastEnd->format("Y-m-d H:i:s"),
-                                $endOfDay->format("Y-m-d H:i:s"),
-                                [],
-                                $datass[$lastIndex][7],
-                                $datass[$lastIndex][8],
-                                $datass[$lastIndex][9],
-                            ];
-                        }
-                    }
-                }
-
-                foreach ($datass as &$log) {
-                    $log[4] = Carbon::parse($log[4])->format("h:i:s A");
-                    $log[5] = Carbon::parse($log[5])->format("h:i:s A");
-                }
-                unset($log);
+            if (!empty($datass)) {
+                $datass = insertHOSMissingLogs($datass);
             } else {
-
                 $datass = $startDataArr;
             }
 
@@ -11280,7 +11195,7 @@ function hos_date_data($id, $startTime, $endTime)
                 $startLogOdometer = $startLog[7];
                 $lastLogOdometer = $lastLog[7];
 
-                if ($startLogOdometer > 0 && $lastLogOdometer > 0) {
+                if (!is_null($startLogOdometer) && !is_null($lastLogOdometer)) {
                     $diffDistance = $lastLogOdometer - $startLogOdometer;
                 }
 
