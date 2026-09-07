@@ -10919,13 +10919,10 @@ function hos_date_data($id, $startTime, $endTime)
 {
 
     $rowTimess = null;
-
     $datass = [];
-
     $datas = [];
 
     $user = User::find($id);
-
     $userDriver = User::where("user_type", "U")
         ->where("id", "!=", $id)
         ->where("master_id", $user->master_id)
@@ -12197,20 +12194,20 @@ function insertMissingLogs($data)
     return $result;
 }
 
-function insertHOSMissingLogs($data)
+function insertHOSMissingLogs(array $logs)
 {
-    if (empty($data)) {
+    if (empty($logs)) {
         return [];
     }
 
-    usort($data, function ($a, $b) {
+    usort($logs, function ($a, $b) {
         return strtotime($a[4]) <=> strtotime($b[4]);
     });
 
     $result = [];
 
-    $dayStart = Carbon::parse($data[0][4])->startOfDay();
-    $dayEnd   = Carbon::parse($data[0][4])->endOfDay();
+    $dayStart = Carbon::parse($logs[0][4])->copy()->startOfDay();
+    $dayEnd   = Carbon::parse($logs[0][4])->copy()->endOfDay();
 
     /*
     |--------------------------------------------------------------------------
@@ -12218,60 +12215,69 @@ function insertHOSMissingLogs($data)
     |--------------------------------------------------------------------------
     */
 
-    $firstStart = Carbon::parse($data[0][4]);
+    $firstStart = Carbon::parse($logs[0][4]);
 
     if ($dayStart->lt($firstStart)) {
 
-        $result[] = [
-            secondsToTime($dayStart->diffInSeconds($firstStart)),
-            "Off duty",
-            null,
-            $data[0][3],
-            $dayStart->format("Y-m-d H:i:s"),
-            $firstStart->format("Y-m-d H:i:s"),
-            $data[0][6],
-            $data[0][7],
-            $data[0][8],
-            $data[0][9],
-        ];
+        $seconds = $dayStart->diffInSeconds($firstStart);
+
+        if ($seconds > 0) {
+
+            $result[] = [
+                secondsToTime($seconds),
+                "Off duty",
+                null,
+                $logs[0][3],
+                $dayStart->format("Y-m-d H:i:s"),
+                $firstStart->format("Y-m-d H:i:s"),
+                $logs[0][6],
+                $logs[0][7],
+                $logs[0][8],
+                $logs[0][9],
+            ];
+        }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Process all logs
+    | Existing logs + middle gaps
     |--------------------------------------------------------------------------
     */
 
-    $count = count($data);
+    $count = count($logs);
 
     for ($i = 0; $i < $count; $i++) {
 
-        $log = $data[$i];
+        $current = $logs[$i];
 
-        $result[] = $log;
+        $result[] = $current;
 
         if ($i == $count - 1) {
-            break;
+            continue;
         }
 
-        $end = Carbon::parse($log[5]);
+        $currentEnd = Carbon::parse($current[5]);
+        $nextStart  = Carbon::parse($logs[$i + 1][4]);
 
-        $nextStart = Carbon::parse($data[$i + 1][4]);
+        if ($currentEnd->lt($nextStart)) {
 
-        if ($end->lt($nextStart)) {
+            $seconds = $currentEnd->diffInSeconds($nextStart);
 
-            $result[] = [
-                secondsToTime($end->diffInSeconds($nextStart)),
-                "Off duty",
-                null,
-                $log[3],
-                $end->format("Y-m-d H:i:s"),
-                $nextStart->format("Y-m-d H:i:s"),
-                $log[6],
-                $log[7],
-                $log[8],
-                $log[9],
-            ];
+            if ($seconds > 0) {
+
+                $result[] = [
+                    secondsToTime($seconds),
+                    "Off duty",
+                    null,
+                    $current[3],
+                    $currentEnd->format("Y-m-d H:i:s"),
+                    $nextStart->format("Y-m-d H:i:s"),
+                    $current[6],
+                    $current[7],
+                    $current[8],
+                    $current[9],
+                ];
+            }
         }
     }
 
@@ -12281,36 +12287,41 @@ function insertHOSMissingLogs($data)
     |--------------------------------------------------------------------------
     */
 
-    $last = end($data);
+    $last = end($logs);
 
     $lastEnd = Carbon::parse($last[5]);
 
     if ($lastEnd->lt($dayEnd)) {
 
-        $result[] = [
-            secondsToTime($lastEnd->diffInSeconds($dayEnd)),
-            "Off duty",
-            null,
-            $last[3],
-            $lastEnd->format("Y-m-d H:i:s"),
-            $dayEnd->format("Y-m-d H:i:s"),
-            $last[6],
-            $last[7],
-            $last[8],
-            $last[9],
-        ];
+        $seconds = $lastEnd->diffInSeconds($dayEnd);
+
+        if ($seconds > 0) {
+
+            $result[] = [
+                secondsToTime($seconds),
+                "Off duty",
+                null,
+                $last[3],
+                $lastEnd->format("Y-m-d H:i:s"),
+                $dayEnd->format("Y-m-d H:i:s"),
+                $last[6],
+                $last[7],
+                $last[8],
+                $last[9],
+            ];
+        }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Format for API response
+    | Convert back for frontend
     |--------------------------------------------------------------------------
     */
 
-    foreach ($result as &$log) {
+    foreach ($result as &$row) {
 
-        $log[4] = Carbon::parse($log[4])->format("h:i:s A");
-        $log[5] = Carbon::parse($log[5])->format("h:i:s A");
+        $row[4] = Carbon::parse($row[4])->format("h:i:s A");
+        $row[5] = Carbon::parse($row[5])->format("h:i:s A");
     }
 
     return $result;
