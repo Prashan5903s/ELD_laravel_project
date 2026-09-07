@@ -306,9 +306,9 @@ class HOSMobileAPIController extends Controller
 
                     if ($graphData && count($graphData) >= 3) {
 
-                        $mergeLogData = mobile_merge_log_data($graphData[0], $currentTime);
+                        // $mergeLogData = mobile_merge_log_data($graphData[0], $currentTime);
 
-                        $finalData['graph_data'] = $mergeLogData;
+                        $finalData['graph_data'] = $graphData[0];
 
                         $distinctVehicle = [];
 
