@@ -11204,8 +11204,6 @@ function hos_date_data($id, $startTime, $endTime)
                 $endDateLocationName = $lastLog[8];
             }
 
-            return $datass;
-
             $datass = web_merge_log_data_1($datass, $currentTime);
 
             $dataViol = check_eld_rules($id, $start, $end);
