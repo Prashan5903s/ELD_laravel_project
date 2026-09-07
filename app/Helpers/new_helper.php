@@ -1389,7 +1389,6 @@ function mobile_graph_hos_log_data($id, $startTime, $endTime, $currentTime, $mas
                 ];
             }
         }
-
     } else {
 
         $currentStartTime = Carbon::parse($currentTime)->startOfDay();
@@ -1853,4 +1852,75 @@ function hod_log_mobile_time_data_edit(
     });
 
     return true;
+}
+
+function mobile_merge_log_data($logsData, $currentTime)
+{
+    $currentTime = Carbon::parse($currentTime);
+
+    if (empty($logsData) || count($logsData) === 0) {
+        return [];
+    }
+
+    $mergedLogs = [];
+
+    foreach ($logsData as $log) {
+
+        // First log
+        if (empty($mergedLogs)) {
+            $mergedLogs[] = $log;
+            continue;
+        }
+
+        $lastIndex = count($mergedLogs) - 1;
+        $lastLog = $mergedLogs[$lastIndex];
+
+        /*
+         * Merge only consecutive logs having the same shift_id.
+         *
+         * Example:
+         * Off  00:00:00 - 03:30:00
+         * Off  03:30:00 - 06:00:00
+         *
+         * becomes:
+         * Off  00:00:00 - 06:00:00
+         */
+        if (
+            isset($lastLog['shift_id'], $log['shift_id']) &&
+            (int) $lastLog['shift_id'] === (int) $log['shift_id']
+        ) {
+            // Extend the previous log's end time
+            $mergedLogs[$lastIndex]['end_log_time'] = $log['end_log_time'];
+
+            /*
+             * Keep useful ending information from the latest log.
+             * This is optional, but useful if the last merged record
+             * contains the latest odometer/location/engine hour.
+             */
+            if (array_key_exists('location_end', $log)) {
+                $mergedLogs[$lastIndex]['location_end'] = $log['location_end'];
+            }
+
+            if (array_key_exists('odometer', $log)) {
+                $mergedLogs[$lastIndex]['odometer'] = $log['odometer'];
+            }
+
+            if (array_key_exists('engine_hour', $log)) {
+                $mergedLogs[$lastIndex]['engine_hour'] = $log['engine_hour'];
+            }
+
+            if (array_key_exists('is_edit_allowed', $log)) {
+                $mergedLogs[$lastIndex]['is_edit_allowed'] =
+                    $mergedLogs[$lastIndex]['is_edit_allowed']
+                    && $log['is_edit_allowed'];
+            }
+
+            continue;
+        }
+
+        // Different shift_id -> create a new log
+        $mergedLogs[] = $log;
+    }
+
+    return $mergedLogs;
 }

@@ -271,7 +271,6 @@ class HOSMobileAPIController extends Controller
             $timezone = $userInfo->home_terminal_timezone;
 
             $currentTime = Carbon::parse()->setTimezone($timezone)->toDateTimeLocalString();
-
             $currentTime = Carbon::parse($currentTime);
 
             $end = date('Y-m-d', strtotime($currentTime));
@@ -307,7 +306,9 @@ class HOSMobileAPIController extends Controller
 
                     if ($graphData && count($graphData) >= 3) {
 
-                        $finalData['graph_data'] = $graphData[0];
+                        $mergeLogData = mobile_merge_log_data($graphData[0], $currentTime);
+
+                        $finalData['graph_data'] = $mergeLogData;
 
                         $distinctVehicle = [];
 
