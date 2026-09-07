@@ -1924,3 +1924,63 @@ function mobile_merge_log_data($logsData, $currentTime)
 
     return $mergedLogs;
 }
+
+
+function web_merge_log_data_1($logsData, $currentTime)
+{
+    if (empty($logsData)) {
+        return [];
+    }
+
+    $merged = [];
+
+    foreach ($logsData as $log) {
+
+        // First record
+        if (empty($merged)) {
+            $merged[] = $log;
+            continue;
+        }
+
+        $lastIndex = count($merged) - 1;
+        $last = $merged[$lastIndex];
+
+        // Indexes
+        // 0 => duration
+        // 1 => status
+        // 2 => message
+        // 3 => vehicle
+        // 4 => start time
+        // 5 => end time
+        // 6 => location start
+        // 7 => odometer
+        // 8 => location
+        // 9 => engine hour
+
+        // Merge only if status is same
+        if ($last[1] === $log[1]) {
+
+            // Extend end time
+            $merged[$lastIndex][5] = $log[5];
+
+            // Keep latest odometer/location/engine hour
+            $merged[$lastIndex][7] = $log[7];
+            $merged[$lastIndex][8] = $log[8];
+            $merged[$lastIndex][9] = $log[9];
+
+            // Recalculate duration
+            $start = Carbon::createFromFormat('h:i:s A', $merged[$lastIndex][4]);
+            $end   = Carbon::createFromFormat('h:i:s A', $log[5]);
+
+            $seconds = $end->diffInSeconds($start);
+
+            $merged[$lastIndex][0] = gmdate('H:i:s', $seconds);
+
+            continue;
+        }
+
+        $merged[] = $log;
+    }
+
+    return $merged;
+}
