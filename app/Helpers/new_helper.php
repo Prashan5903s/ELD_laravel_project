@@ -1984,3 +1984,42 @@ function web_merge_log_data_1($logsData, $currentTime)
 
     return $merged;
 }
+
+
+function web_merge_log_data_chart($logsData)
+{
+    if (empty($logsData)) {
+        return [];
+    }
+
+    $merged = [];
+
+    foreach ($logsData as $log) {
+
+        if (empty($merged)) {
+            $merged[] = $log;
+            continue;
+        }
+
+        $lastIndex = count($merged) - 1;
+        $last = $merged[$lastIndex];
+
+        // Merge only when:
+        // 1. Same shift
+        // 2. Same vehicle
+        // 3. Previous end == Current start (continuous)
+        if (
+            $last[1] == $log[1] &&
+            $last[5] == $log[5] &&
+            $last[4] == $log[3]
+        ) {
+            // Keep original ID
+            // Update only end time
+            $merged[$lastIndex][4] = $log[4];
+        } else {
+            $merged[] = $log;
+        }
+    }
+
+    return $merged;
+}

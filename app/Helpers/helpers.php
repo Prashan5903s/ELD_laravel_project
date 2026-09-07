@@ -10750,11 +10750,11 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
                 ->first();
 
-            $log = $data->current_shift_status;
+            $shiftId = $data->current_shift_status;
 
-            $logs = ListOption::where("list_id", "driving_status")
+            $shiftName = ListOption::where("list_id", "driving_status")
 
-                ->where("option_id", $log)
+                ->where("option_id", $shiftId)
 
                 ->pluck("title")
 
@@ -10771,8 +10771,8 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
             $datass[] = [
                 $data->id,
-                $log,
-                $logs,
+                $shiftId,
+                $shiftName,
                 $startTimeFormatted,
                 $endTimeFormatted,
                 $vehicle ? $vehicle->name : '',
@@ -10911,6 +10911,8 @@ function graph_hos_chart($id, $startTime, $endTime, $currentTime)
 
         ];
     }
+
+    $datass = web_merge_log_data_chart($datass, $currentTime);
 
     return [$datass, $distinctVehicles, $viol];
 }

@@ -40,7 +40,23 @@ class VehiclesController extends Controller
     public function index(Request $request)
     {
 
-        $data = hos_date_data(98, '2026-09-04', '2026-09-04');
+        $userInfo = UserInfo::where('user_id', 98)->first();
+
+        $timeZone = $userInfo->home_terminal_timezone;
+
+        //Current time of today
+        $currTime = Carbon::now()->setTimezone($timeZone);
+
+        $currTimes = Carbon::parse($currTime->toDateTimeString());
+
+        $timeDate = Carbon::parse('2026-09-04');
+
+        $currentTime = $currTimes;
+
+        $startTime = $timeDate->copy()->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+        $endTime = $timeDate->copy()->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+
+        $data = graph_hos_chart(98, $startTime, $endTime, $currentTime);
 
         return response()->json($data);
 
