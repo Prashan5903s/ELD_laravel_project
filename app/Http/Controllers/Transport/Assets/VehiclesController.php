@@ -40,6 +40,10 @@ class VehiclesController extends Controller
     public function index(Request $request)
     {
 
+        $data = hos_date_data(98, '2026-09-04', '2026-09-04');
+
+        return response()->json($data);
+
         // $user = Auth::user();
         $userIds = Auth::user()->master_id;
 

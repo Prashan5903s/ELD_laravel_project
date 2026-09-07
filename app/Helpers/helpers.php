@@ -11066,7 +11066,8 @@ function hos_date_data($id, $startTime, $endTime)
 
                     $lastTimeData = $aboveTimess;
 
-                    $time_start = $rowTimess->format("h:i A");
+                    $time_start = $rowTimess->format("Y-m-d H:i:s");
+                    $time_end = $aboveTimess->format("Y-m-d H:i:s");
 
                     $listLog = ListOption::where(
                         "option_id",
@@ -11095,7 +11096,6 @@ function hos_date_data($id, $startTime, $endTime)
 
                     $startLog = $datai;
 
-                    $time_end = Carbon::parse($aboveTimess)->format("h:i A");
 
                     $timeInSeconds = Carbon::parse($aboveTimess)->diffInSeconds(
                         Carbon::parse($rowTimess)
@@ -12352,75 +12352,114 @@ function insertHOSMissingLogs($data)
         return [];
     }
 
-    // Drop invalid logs (start >= end) up front, before any comparisons
-    $data = array_values(array_filter($data, function ($log) {
-        $start = Carbon::parse($log[4]);
-        $end = Carbon::parse($log[5]);
-        return $start->lt($end);
-    }));
-
-    if (empty($data)) {
-        return [];
-    }
-
-    // Sort by start time
     usort($data, function ($a, $b) {
-        return Carbon::parse($a[4])->lte(Carbon::parse($b[4])) ? -1 : 1;
+        return strtotime($a[4]) <=> strtotime($b[4]);
     });
 
     $result = [];
 
-    for ($i = 0; $i < count($data); $i++) {
+    $dayStart = Carbon::parse($data[0][4])->startOfDay();
+    $dayEnd   = Carbon::parse($data[0][4])->endOfDay();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gap before first log
+    |--------------------------------------------------------------------------
+    */
+
+    $firstStart = Carbon::parse($data[0][4]);
+
+    if ($dayStart->lt($firstStart)) {
+
+        $result[] = [
+            secondsToTime($dayStart->diffInSeconds($firstStart)),
+            "Off duty",
+            null,
+            $data[0][3],
+            $dayStart->format("Y-m-d H:i:s"),
+            $firstStart->format("Y-m-d H:i:s"),
+            $data[0][6],
+            $data[0][7],
+            $data[0][8],
+            $data[0][9],
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Process all logs
+    |--------------------------------------------------------------------------
+    */
+
+    $count = count($data);
+
+    for ($i = 0; $i < $count; $i++) {
 
         $log = $data[$i];
 
-        $start = Carbon::parse($log[4]);
-        $end = Carbon::parse($log[5]);
-
-        // If there's a next log, trim this one's end back to the next
-        // log's start so overlapping fragments never reach the response.
-        if (isset($data[$i + 1])) {
-
-            $nextStart = Carbon::parse($data[$i + 1][4]);
-
-            if ($end->gt($nextStart)) {
-                $end = $nextStart->copy();
-                $log[5] = $end->format('h:i A');
-            }
-
-            // After trimming, the log may have become zero/negative length; drop it.
-            if ($start->gte($end)) {
-                continue;
-            }
-        }
-
         $result[] = $log;
 
-        if (!isset($data[$i + 1])) {
-            continue;
+        if ($i == $count - 1) {
+            break;
         }
+
+        $end = Carbon::parse($log[5]);
 
         $nextStart = Carbon::parse($data[$i + 1][4]);
 
-        // Only insert an "Off duty" filler if there is a real gap
         if ($end->lt($nextStart)) {
 
-            $durationSeconds = $nextStart->diffInSeconds($end);
-            $duration = secondsToTime($durationSeconds);
-
             $result[] = [
-                $duration,
+                secondsToTime($end->diffInSeconds($nextStart)),
                 "Off duty",
                 null,
                 $log[3],
-                $end->format('h:i A'),
-                $nextStart->format('h:i A'),
+                $end->format("Y-m-d H:i:s"),
+                $nextStart->format("Y-m-d H:i:s"),
                 $log[6],
                 $log[7],
                 $log[8],
                 $log[9],
             ];
         }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gap after last log
+    |--------------------------------------------------------------------------
+    */
+
+    $last = end($data);
+
+    $lastEnd = Carbon::parse($last[5]);
+
+    if ($lastEnd->lt($dayEnd)) {
+
+        $result[] = [
+            secondsToTime($lastEnd->diffInSeconds($dayEnd)),
+            "Off duty",
+            null,
+            $last[3],
+            $lastEnd->format("Y-m-d H:i:s"),
+            $dayEnd->format("Y-m-d H:i:s"),
+            $last[6],
+            $last[7],
+            $last[8],
+            $last[9],
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Format for API response
+    |--------------------------------------------------------------------------
+    */
+
+    foreach ($result as &$log) {
+
+        $log[4] = Carbon::parse($log[4])->format("h:i:s A");
+        $log[5] = Carbon::parse($log[5])->format("h:i:s A");
     }
 
     return $result;
