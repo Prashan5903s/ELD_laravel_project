@@ -11785,6 +11785,7 @@ function hos_date_data_test($id, $startTime, $endTime)
                 $vehicleLog = $datass[0][3];
                 $locationLog = $datass[0][6];
                 $odometerLog = $datass[0][7];
+
                 $startLogTime =
 
                     Carbon::parse($firstDataLog)->format("h:i A") != "12:00 AM";
