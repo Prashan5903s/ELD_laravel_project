@@ -11177,69 +11177,35 @@ function hos_date_data($id, $startTime, $endTime)
 
             if ($arraylen > 0) {
 
-                $firstDataLog = $datass[0][4];
-                $notesLog = $datass[0][2];
-                $vehicleLog = $datass[0][3];
-                $locationLog = $datass[0][6];
-                $odometerLog = $datass[0][7];
-                $locationName = $datass[0][8];
-                $engineHour = $datass[0][9];
+                $firstStart = Carbon::parse($datass[0][4]);
 
-                $startLogTime = Carbon::parse($firstDataLog)->format("h:i A") != "12:00 AM";
+                if (!$firstStart->equalTo($start)) {
 
-                if ($startLogTime) {
+                    $duration = $start->diffInSeconds($firstStart);
 
-                    $firstLogData = $logsData->first();
+                    if ($duration > 0) {
 
-                    $firstLogTime = create_end_time(
-                        $firstLogData,
-                        $start,
-                        $firstLogData,
-                        $end,
-                        $currentTime
-                    );
-
-                    $firstDataLog = Carbon::parse($firstLogTime[0]);
-
-                    $startDuration = $firstDataLog->diffInSeconds($start);
-
-                    if ($startDuration > 0) {
-
-                        $startDuration = secondsToTime($startDuration);
-
-                        $startDurationTime = Carbon::parse($start)->format("h:i A");
-
-                        $endTimeDuration = Carbon::parse($firstDataLog)->format("h:i A");
-
-                        $newLog = [
-                            $startDuration,
+                        array_unshift($datass, [
+                            secondsToTime($duration),
                             "Off duty",
-                            $notesLog,
-                            $vehicleLog,
-                            $startDurationTime,
-                            $endTimeDuration,
-                            $locationLog,
-                            $odometerLog,
-                            $locationName,
-                            $engineHour
-                        ];
-
-                        array_unshift($datass, $newLog);
+                            $datass[0][2],
+                            $datass[0][3],
+                            $start->format("Y-m-d H:i:s"),
+                            $firstStart->format("Y-m-d H:i:s"),
+                            $datass[0][6],
+                            $datass[0][7],
+                            $datass[0][8],
+                            $datass[0][9],
+                        ]);
                     }
                 }
 
-                // Recalculate after array_unshift()
-                $arrayLogLen = count($datass);
-                $lastIndex = $arrayLogLen - 1;
-
-                $startDayTime = Carbon::parse($start)->startOfDay();
-                $currentTimeStart = Carbon::parse($currentTime)->startOfDay();
+                $lastIndex = count($datass) - 1;
 
                 $lastEnd = Carbon::parse($datass[$lastIndex][5]);
 
-                if ($startDayTime->equalTo($currentTimeStart)) {
+                if ($start->isToday()) {
 
-                    // Today
                     if ($lastEnd->lt($currentTime)) {
 
                         $duration = $lastEnd->diffInSeconds($currentTime);
@@ -11262,7 +11228,7 @@ function hos_date_data($id, $startTime, $endTime)
                     }
                 } else {
 
-                    $endOfDay = Carbon::parse($end)->endOfDay();
+                    $endOfDay = $start->copy()->endOfDay();
 
                     if ($lastEnd->lt($endOfDay)) {
 
@@ -11285,52 +11251,45 @@ function hos_date_data($id, $startTime, $endTime)
                         }
                     }
                 }
+
+                foreach ($datass as &$log) {
+                    $log[4] = Carbon::parse($log[4])->format("h:i:s A");
+                    $log[5] = Carbon::parse($log[5])->format("h:i:s A");
+                }
+                unset($log);
             } else {
 
                 $datass = $startDataArr;
             }
 
             $startlocation = [];
-
             $endlocation = [];
 
             $lastLogOdometer = null;
-
             $startLogOdometer = null;
-
             $diffDistance = 0;
-
             $engineHourFinal = 0;
-
             $startDateLocationName = null;
-
             $endDateLocationName = null;
 
-            if ($datass && count($datass) > 0) {
-
-                $arraylen = count($datass); // <-- add this line
+            if (!empty($datass)) {
 
                 $startLog = $datass[0];
-                $lastLog = $datass[$arraylen - 1];
+                $lastLog = $datass[count($datass) - 1];
 
-                if ($startLog && $lastLog) {
+                $startLogOdometer = $startLog[7];
+                $lastLogOdometer = $lastLog[7];
 
-                    $startlocation = [];
-                    $endlocation = [];
-
-                    $startLogOdometer = $startLog[7];
-                    $lastLogOdometer = $lastLog[7];
-
-                    if ($startLogOdometer > 0 && $lastLogOdometer > 0) {
-                        $diffDistance = $lastLogOdometer - $startLogOdometer;
-                    }
-
-                    $engineHourFinal = $lastLog[9];
-                    $startDateLocationName = $startLog[8];
-                    $endDateLocationName = $lastLog[8];
-
-                    $engineHourFinal = $engineHourFinal > 0 ? $engineHourFinal / 3600 : 0;
+                if ($startLogOdometer > 0 && $lastLogOdometer > 0) {
+                    $diffDistance = $lastLogOdometer - $startLogOdometer;
                 }
+
+                $engineHourFinal = $lastLog[9] > 0
+                    ? $lastLog[9] / 3600
+                    : 0;
+
+                $startDateLocationName = $startLog[8];
+                $endDateLocationName = $lastLog[8];
             }
 
             $dataViol = check_eld_rules($id, $start, $end);
