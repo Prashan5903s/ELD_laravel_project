@@ -15,6 +15,7 @@ use App\Http\Controllers\Mobile\API\BluetoothAPIController;
 use App\Http\Controllers\Mobile\API\DashboardMobieAPIController;
 use App\Http\Controllers\Mobile\API\DocumentMobileAPIController;
 use App\Http\Controllers\Mobile\API\ActivityLogMobileAPIController;
+use App\Http\Controllers\Mobile\API\ChatAPIController;
 use App\Http\Controllers\Mobile\API\GroupAssignMobileApiController;
 use App\Http\Controllers\Mobile\API\NotificationMobileAPIController;
 use App\Http\Controllers\Mobile\API\DOTInspectionMobileAPIController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Mobile\API\HOSUnsignedLogMobileAPIController;
 use App\Http\Controllers\Mobile\API\InspectionReportMobileAPIController;
 use App\Http\Controllers\Mobile\API\UserDeviceAPIController;
 use App\Http\Controllers\Mobile\API\ErrorAPIController;
+use Ratchet\Http\Router;
 
 // Public routes
 Route::post('user/mobile/login', [LoginMobileAPIController::class, 'mobile_login']);
@@ -51,9 +53,11 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::post('hos/form/edit/activity', [ActivityLogMobileAPIController::class, 'store']);
 
+    Route::get("chat/data", [ChatAPIController::class, "index"]);
+
     // Error log route
     Route::post("error/data/log", [ErrorAPIController::class, 'error_data_save']);
-    
+
     Route::get('hos/mobile/log/data', [HOSMobileAPIController::class, 'hos_mobile_data']);
 
     Route::get('hos/mobile/data/test/{start}/{end}', [HOSMobileAPIController::class, 'hos_mobile_test_data'])->name('hos.data.mobile.test');
