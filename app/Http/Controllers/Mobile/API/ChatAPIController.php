@@ -53,7 +53,7 @@ class ChatAPIController extends Controller
 
             $usersOutput = $users->map(function ($user) {
                 return [
-                    'user_id'  => 'user_' . $user->id,
+                    'user_id'  =>  $user->id,
                     'name'     => trim($user->first_name . ' ' . $user->last_name),
                     'avatar'   => $user->avatar_image,
                     'role'     => $user->user_type === 'TR' ? 'admin' : 'driver',
@@ -91,14 +91,14 @@ class ChatAPIController extends Controller
                     ->count();
 
                 $conversations->push([
-                    'conversation_id' => 'conv_' . $latestMessage->id,
+                    'conversation_id' => $latestMessage->id,
                     'type'            => 'direct',
-                    'user_id'         => 'user_' . $user->id,
+                    'user_id'         => $user->id,
                     'last_message'    => [
-                        'message_id' => 'msg_' . $latestMessage->id,
+                        'message_id' =>  $latestMessage->id,
                         'type'       => $latestMessage->image_url ? 'image' : 'text',
                         'text'       => $latestMessage->message_text,
-                        'sender_id'  => 'user_' . $latestMessage->sender_id,
+                        'sender_id'  => $latestMessage->sender_id,
                         'created_at' => Carbon::parse($latestMessage->sent_time)->toISOString(),
                     ],
                     'unread_count' => $unreadCount,
@@ -132,10 +132,10 @@ class ChatAPIController extends Controller
                     ->count();
 
                 return [
-                    'group_id'     => 'group_' . $group->group_id,
+                    'group_id'     => $group->group_id,
                     'name'         => $group->group_name,
                     'avatar'       => $group->group_title ?? null,
-                    'created_by'   => 'user_' . $group->created_by,
+                    'created_by'   => $group->created_by,
                     'member_count' => $memberCount,
                     'createdAt'    => Carbon::parse($group->created_at)->toISOString(),
                 ];
@@ -170,14 +170,14 @@ class ChatAPIController extends Controller
                 $sender = User::find($latestMessage->sender_id);
 
                 $conversations->push([
-                    'conversation_id' => 'conv_' . $latestMessage->id,
+                    'conversation_id' => $latestMessage->id,
                     'type'            => 'group',
-                    'group_id'        => 'group_' . $group->group_id,
+                    'group_id'        =>  $group->group_id,
                     'last_message'    => [
-                        'message_id'  => 'msg_' . $latestMessage->id,
+                        'message_id'  =>  $latestMessage->id,
                         'type'        => $latestMessage->image_url ? 'image' : 'text',
                         'text'        => $latestMessage->message_text,
-                        'sender_id'   => 'user_' . $latestMessage->sender_id,
+                        'sender_id'   => $latestMessage->sender_id,
                         'sender_name' => $sender
                             ? trim($sender->first_name . ' ' . $sender->last_name)
                             : 'Unknown',
