@@ -56,7 +56,7 @@ class ChatAPIController extends Controller
                     'user_id'  =>  $user->id,
                     'name'     => trim($user->first_name . ' ' . $user->last_name),
                     'avatar'   => $user->avatar_image,
-                    'role'     => $user->user_type === 'TR' ? 'admin' : 'driver',
+                    'role'     => $user->user_type === 'TR' ? 'transport_company' : 'driver',
                 ];
             })->values();
 
