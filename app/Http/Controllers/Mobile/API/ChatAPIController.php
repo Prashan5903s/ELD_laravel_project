@@ -118,6 +118,9 @@ class ChatAPIController extends Controller
 
                 $unreadGroupMessages = UserMessage::where('type', 1)
                     ->where('group_id', $group->group_id)
+                    // Never count messages the user sent themselves as unread —
+                    // they don't (and shouldn't) appear in their own is_read list.
+                    ->where('sender_id', '!=', $userId)
                     ->where(function ($query) use ($userId) {
 
                         $query->whereNull('is_read')
