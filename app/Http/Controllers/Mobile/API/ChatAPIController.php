@@ -66,12 +66,14 @@ class ChatAPIController extends Controller
                             });
                     })
                     ->orderBy('sent_time', 'DESC')
+                    ->select("id", "type", "group_id", "reciever_id", "sender_id", "message_text", "image_url", "sent_time", "is_read")
                     ->first();
 
                 $unreadCount = UserMessage::where('type', 0)
                     ->where('sender_id', $user->id)
                     ->where('reciever_id', $userId)
                     ->where('is_read', 0)
+                    ->select("id", "type", "group_id", "reciever_id", "sender_id", "message_text", "image_url", "sent_time", "is_read")
                     ->count();
 
 
@@ -82,10 +84,8 @@ class ChatAPIController extends Controller
                     $userMessages->push([
                         'type' => 'user',
                         'type_id' => $user->id,
-
                         'user' => $user,
                         'group' => null,
-
                         'message' => $latestMessage,
                         'sent_time' => $latestMessage->sent_time,
                     ]);
@@ -113,6 +113,7 @@ class ChatAPIController extends Controller
                 $latestMessage = UserMessage::where('type', 1)
                     ->where('group_id', $group->group_id)
                     ->orderBy('sent_time', 'DESC')
+                    ->select("id", "type", "group_id", "reciever_id", "sender_id", "message_text", "image_url", "sent_time", "is_read")
                     ->first();
 
                 $unreadGroupMessages = UserMessage::where('type', 1)
@@ -126,6 +127,7 @@ class ChatAPIController extends Controller
                                 [$userId]
                             );
                     })
+                    ->select("id", "type", "group_id", "reciever_id", "sender_id", "message_text", "image_url", "sent_time", "is_read")
                     ->count();
 
 
