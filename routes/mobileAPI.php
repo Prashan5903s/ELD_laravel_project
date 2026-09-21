@@ -32,12 +32,15 @@ Route::post('forgot/mobile/password/{email}', [UserMobileAPIController::class, '
 
 Route::post('reset/mobile/password/{email}', [UserMobileAPIController::class, 'store']);
 
+Route::middleware(['auth:mobileAPI', 'mobileAPI'])->group(function () {
+
+    Route::post("check/user/access/token", [LoginMobileApiController::class, 'checkAccessToken']);
+});
+
 // Protected routes (requires mobileAPI guard)
 Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(function () {
 
     Route::get('config/data', [AppConfigAPIController::class, 'app_config_data']);
-
-    Route::post("check/user/access/token", [LoginMobileApiController::class, 'checkAccessToken']);
 
     Route::post("user/device/notify", [UserDeviceAPIController::class, "store"]);
 
