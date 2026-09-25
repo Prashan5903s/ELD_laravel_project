@@ -44,6 +44,8 @@ Route::middleware(['auth:mobileAPI', 'DrCheckMobile', 'mobileAPI'])->group(funct
 
     Route::post("user/device/notify", [UserDeviceAPIController::class, "store"]);
 
+    Route::post('save/image/message', [UserMobileAPIController::class, 'save_image_message']);
+
     Route::post('new/change/mobile/duty/status', [HOSMobileAPIController::class, 'new_change_mobile_duty_status']);
 
     Route::get('change/mobile/duty/status/{id}/{lat}/{long}/{text}', [HOSMobileAPIController::class, 'change_mobile_duty_status']);
