@@ -73,6 +73,11 @@ class BluetoothAPIController extends Controller
             $locationName = fetchFullAddressName($request->latitude, $request->longitude);
             $currentShift = $request->speed >= 5 ? 3 : 1;
 
+            $latestDriving = DriverShiftLog::where("driver_id", $driverId)
+                ->where('system_entry', 1)
+                ->latest("start_log_time")
+                ->first();
+
             $logCreate = DriverShiftLog::create([
                 "driver_id" => $driverId,
                 "vehicle_id" => $vehicleId,
@@ -134,22 +139,24 @@ class BluetoothAPIController extends Controller
 
             //This is the api hit of socket
 
-            Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
-                'sendType' => 'change-duty-status',
-                'driverId' => $driverId,
-                'vehicle' => $vehicle,
-                'duration' => $duration,
-                'shiftStatus' => $currentShift ?? 1,
-                'startLogTime' => $startLogTime->toISOString(),
-                'endLogTime' => $endLogTime->toISOString(),
-                'locationName' => $locationName,
-                'odometer' => $request->odometer,
-                'shift_time' => $timeData[4] ?? '00:00:00',
-                'cycle_time' => $timeData[6] ?? '00:00:00',
-                'break_time' => $timeData[8] ?? '00:00:00',
-                'drive_time' => $timeData[7] ?? '00:00:00',
-                'engineHours' => $request->engineHours,
-            ]);
+            if (!$latestDriving || ($latestDriving && $latestDriving->current_shift_status != $currentShift)) {
+                Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
+                    'sendType' => 'change-duty-status',
+                    'driverId' => $driverId,
+                    'vehicle' => $vehicle,
+                    'duration' => $duration,
+                    'shiftStatus' => $currentShift ?? 1,
+                    'startLogTime' => $startLogTime->toISOString(),
+                    'endLogTime' => $endLogTime->toISOString(),
+                    'locationName' => $locationName,
+                    'odometer' => $request->odometer,
+                    'shift_time' => $timeData[4] ?? '00:00:00',
+                    'cycle_time' => $timeData[6] ?? '00:00:00',
+                    'break_time' => $timeData[8] ?? '00:00:00',
+                    'drive_time' => $timeData[7] ?? '00:00:00',
+                    'engineHours' => $request->engineHours,
+                ]);
+            }
 
             return response()->json(
                 [
@@ -160,7 +167,6 @@ class BluetoothAPIController extends Controller
                 ],
                 200
             );
-
         } catch (ValidationException $th) {
 
             DB::rollBack();
@@ -173,5 +179,4 @@ class BluetoothAPIController extends Controller
             ], 422);
         }
     }
-
 }

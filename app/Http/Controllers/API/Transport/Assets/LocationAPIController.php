@@ -47,73 +47,73 @@ class LocationAPIController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        Location::create([
-            'name' => $request->name,
-            'address' => $request->address,
-            'type' => $request->address_type,
-            'tags' => $request->tags,
-            'shapeData' => $request->shapeData,
-            'notes' => $request->note,
-            'master_company_id' => Auth::user()->master_company_id,   // Company id
-            'master_id' => Auth::user()->master_id,                   // Group id
-            'created_by' => $request->user()->id,
-            'updated_by' => $request->user()->id,
-        ]);
+        public function store(Request $request)
+        {
+            Location::create([
+                'name' => $request->name,
+                'address' => $request->address,
+                'type' => $request->address_type,
+                'tags' => $request->tags,
+                'shapeData' => $request->shapeData,
+                'notes' => $request->note,
+                'master_company_id' => Auth::user()->master_company_id,   // Company id
+                'master_id' => Auth::user()->master_id,                   // Group id
+                'created_by' => $request->user()->id,
+                'updated_by' => $request->user()->id,
+            ]);
 
-        return response()->json(['success' => 'Location created successfully.']);
-    }
+            return response()->json(['success' => 'Location created successfully.']);
+        }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
+        /**
+         * Display the specified resource.
+         *
+         * @param  int  $id
+         * @return \Illuminate\Http\Response
+         */
+        public function show($id)
+        {
+            //
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $data['location'] = Location::find($id);
-        return response()->json($data);
-    }
+        /**
+         * Show the form for editing the specified resource.
+         *
+         * @param  int  $id
+         * @return \Illuminate\Http\Response
+         */
+        public function edit($id)
+        {
+            $data['location'] = Location::find($id);
+            return response()->json($data);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        $location = Location::find($id);
+        /**
+         * Update the specified resource in storage.
+         *
+         * @param  \Illuminate\Http\Request  $request
+         * @param  int  $id
+         * @return \Illuminate\Http\Response
+         */
+        public function update(Request $request, $id)
+        {
+            $location = Location::find($id);
 
-        $location->update([
-            'name' => $request->name,
-            'address' => $request->address,
-            'type' => $request->address_type,
-            'tags' => $request->tags,
-            'notes' => $request->note,
-            'shapeData' => $request->shapeData,
-            'master_company_id' => Auth::user()->master_company_id,   // Company id
-            'master_id' => Auth::user()->master_id,                   // Group id
-            'created_by' => $request->user()->id,
-            'updated_by' => $request->user()->id,
-        ]);
+            $location->update([
+                'name' => $request->name,
+                'address' => $request->address,
+                'type' => $request->address_type,
+                'tags' => $request->tags,
+                'notes' => $request->note,
+                'shapeData' => $request->shapeData,
+                'master_company_id' => Auth::user()->master_company_id,   // Company id
+                'master_id' => Auth::user()->master_id,                   // Group id
+                'created_by' => $request->user()->id,
+                'updated_by' => $request->user()->id,
+            ]);
 
-        return response()->json(['success' => 'Location updated successfully.']);
-    }
+            return response()->json(['success' => 'Location updated successfully.']);
+        }
 
     /**
      * Remove the specified resource from storage.
