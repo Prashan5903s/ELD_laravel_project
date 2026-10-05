@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\DeviceType;
+use App\Models\VehicleLogHistory;
 use App\Models\Vehicle;
 use App\Models\Hardware;
 
@@ -40,15 +41,24 @@ class Device extends Model
         return $this->belongsTo(Hardware::class, 'hardware_id');
     }
 
-    public function vehicle() {
+    public function vehicle()
+    {
         return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
 
-    public function vehicleLogHistory() {
+    public function vehicleLogHistory()
+    {
         return $this->hasMany(VehicleLogHistory::class, 'identifier', 'serial_number');
     }
     public function driverShiftLogs()
     {
         return $this->hasMany(DriverShiftLog::class, 'vehicle_id', 'vehicle_id');
+    }
+
+    // App\Models\Device
+    public function latestLog()
+    {
+        return $this->hasOne(VehicleLogHistory::class, 'identifier', 'serial_number')
+            ->latestOfMany('event_date_time');
     }
 }

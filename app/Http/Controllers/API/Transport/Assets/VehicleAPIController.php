@@ -21,27 +21,37 @@ class VehicleAPIController extends Controller
      */
     public function index()
     {
-        $data = [];
-        $userIds = Auth::user()->master_id;
-        $trans = User::where('master_id', $userIds)->get();
-        $option = ListOption::where('list_id', 'fuel_type')->get();
-        $make = ListOption::where('list_id', 'make')->get();
-        $state = State::where('is_active', 1)->get();
-        $throttle_wifi = Config::get('app.TH');
-        $user = Auth::user()->id;
+        $authUser = Auth::user();
 
-        $data['trans'] = $trans;
-        $data['make'] = $make;
-        $data['state'] = $state;
-        $data['throttle_wifi'] = $throttle_wifi;
-        $data['option'] = $option;
-        $data['vehicles'] = Vehicle::where('created_by', Auth::user()->id)
-            ->with(['devices', 'latestVehicleLogHistory', 'latestDriverShiftLog.driver'])
+        $data = [];
+        $data['trans']         = User::where('master_id', $authUser->master_id)->get();
+        $data['option']        = ListOption::where('list_id', 'fuel_type')->get();
+        $data['make']          = ListOption::where('list_id', 'make')->get();
+        $data['state']         = State::where('is_active', 1)->get();
+        $data['throttle_wifi'] = Config::get('app.TH');
+        $data['vehicle_year']  = Config::get('app.vehicle_year');
+
+        $vehicles = Vehicle::where('created_by', $authUser->id)
+            ->with(['devices.latestLog', 'latestDriverShiftLog.driver'])
             ->get();
-        $data['vehicle_year'] = Config::get('app.vehicle_year');
+
+        $vehicles->each(function ($vehicle) {
+            // Newest log across the vehicle's devices; single object or null, as before
+            $latest = $vehicle->devices
+                ->map(fn($d) => $d->latestLog)
+                ->filter()
+                ->sortByDesc('event_date_time')
+                ->first();
+
+            // Keep each device's JSON the same as before
+            $vehicle->devices->each(fn($d) => $d->unsetRelation('latestLog'));
+
+            $vehicle->setRelation('latestVehicleLogHistory', $latest);
+        });
+
+        $data['vehicles'] = $vehicles;
 
         return response()->json($data, 200);
-
     }
 
     public function create()
@@ -165,7 +175,6 @@ class VehicleAPIController extends Controller
             ]);
 
             return response()->json(['success' => 'Vehicle activated successfully.'], 200);
-
         } else {
 
             $vehicle->update([
@@ -175,7 +184,7 @@ class VehicleAPIController extends Controller
             return response()->json(['success' => 'Vehicle de-activated successfully.'], 200);
         }
     }
-    
+
     public function check_unique_vin(Request $request, $vin = null, $id = null)
     {
 
@@ -190,20 +199,20 @@ class VehicleAPIController extends Controller
 
         return response()->json($userCount);
     }
-    
+
     public function vehicle_notify(Request $request)
     {
         $user = Auth::user();
         $notifications = $user->notifications;
         $unreadNotificationsCount = $user->unreadNotifications->count();
         $unreadMessage = $user->unreadNotifications->map(function ($notification) {
-          // Include the notification ID along with other attributes if needed
-          return [
-            'id' => $notification->id,
-            'data' => $notification->data, // Include other relevant data as needed
-            'created_at' => $notification->created_at, // Include timestamps if needed
-            // Add any other attributes you want to include here
-          ];
+            // Include the notification ID along with other attributes if needed
+            return [
+                'id' => $notification->id,
+                'data' => $notification->data, // Include other relevant data as needed
+                'created_at' => $notification->created_at, // Include timestamps if needed
+                // Add any other attributes you want to include here
+            ];
         });
         $data = [$notifications, $unreadNotificationsCount, $unreadMessage];
         return response()->json($data);
@@ -213,39 +222,36 @@ class VehicleAPIController extends Controller
     {
         $user = Auth::user();
         $unreadNotificationsCount = $user->unreadNotifications->count();
- 
-        if($unreadNotificationsCount > 0){
- 
-         $user->unreadNotifications->markAsRead();
- 
+
+        if ($unreadNotificationsCount > 0) {
+
+            $user->unreadNotifications->markAsRead();
         }
-        
+
         return response()->json('Notification read');
-        
     }
-    
+
     public function vehicle_notify_id(Request $request, $id)
     {
-      $user = Auth::user();
+        $user = Auth::user();
 
-      // Retrieve the notification by ID
-      $notification = $user->unreadNotifications()->find($id);
+        // Retrieve the notification by ID
+        $notification = $user->unreadNotifications()->find($id);
 
-      if ($notification) {
-         // Mark the specific notification as read
-         $notification->markAsRead();
-        
-         return response()->json(['message' => 'Notification marked as read']);
-      }
+        if ($notification) {
+            // Mark the specific notification as read
+            $notification->markAsRead();
 
-      return response()->json(['message' => 'Notification not found'], 404);
-   }
+            return response()->json(['message' => 'Notification marked as read']);
+        }
 
-    
+        return response()->json(['message' => 'Notification not found'], 404);
+    }
+
+
     public function assign_vehicle(Request $request, $id)
     {
         $data['vechile'] = VehicleAssign::with('vehicle')->where('driver_id', $id)->get();
         return response()->json($data, 200);
     }
-    
 }

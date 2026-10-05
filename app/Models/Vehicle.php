@@ -57,8 +57,6 @@ class Vehicle extends Model
 
     public function latestDriverShiftLog()
     {
-        return $this->hasOne(DriverShiftLog::class, 'vehicle_id')->latest('created_at');
+        return $this->hasOne(DriverShiftLog::class, 'vehicle_id')->latestOfMany('created_at');
     }
-
-
 }

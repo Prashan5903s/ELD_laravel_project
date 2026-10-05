@@ -140,6 +140,7 @@ class BluetoothAPIController extends Controller
             //This is the api hit of socket
 
             if (!$latestDriving || ($latestDriving && $latestDriving->current_shift_status != $currentShift)) {
+
                 Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
                     'sendType' => 'change-duty-status',
                     'driverId' => $driverId,
