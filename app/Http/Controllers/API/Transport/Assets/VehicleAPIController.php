@@ -203,19 +203,22 @@ class VehicleAPIController extends Controller
     public function vehicle_notify(Request $request)
     {
         $user = Auth::user();
-        $notifications = $user->notifications;
-        $unreadNotificationsCount = $user->unreadNotifications->count();
-        $unreadMessage = $user->unreadNotifications->map(function ($notification) {
-            // Include the notification ID along with other attributes if needed
-            return [
-                'id' => $notification->id,
-                'data' => $notification->data, // Include other relevant data as needed
-                'created_at' => $notification->created_at, // Include timestamps if needed
-                // Add any other attributes you want to include here
-            ];
-        });
-        $data = [$notifications, $unreadNotificationsCount, $unreadMessage];
-        return response()->json($data);
+
+        // Capped, so MySQL never sorts the whole table
+        $notifications = $user->notifications()->latest()->limit(50)->get();
+
+        $unread = $user->unreadNotifications()->latest()->limit(50)->get();
+
+        // Real COUNT(*), so the number stays accurate even though the lists are capped
+        $unreadNotificationsCount = $user->unreadNotifications()->count();
+
+        $unreadMessage = $unread->map(fn($n) => [
+            'id'         => $n->id,
+            'data'       => $n->data,
+            'created_at' => $n->created_at,
+        ]);
+
+        return response()->json([$notifications, $unreadNotificationsCount, $unreadMessage]);
     }
 
     public function vehicle_unnotify()
