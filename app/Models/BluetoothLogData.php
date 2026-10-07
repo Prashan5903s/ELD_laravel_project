@@ -18,6 +18,7 @@ class BluetoothLogData extends Model
         "log_data",
         "request_json",
         "ip",
+        "created_at",
         "created_by",
         "updated_by"
     ];
@@ -26,7 +27,5 @@ class BluetoothLogData extends Model
     {
 
         return $this->hasOne(User::class, 'id', 'driver_id');
-
     }
-
 }

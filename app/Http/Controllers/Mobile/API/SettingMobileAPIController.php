@@ -34,16 +34,16 @@ class SettingMobileAPIController extends Controller
                     $query->select('id', 'short_name', 'logo', 'language_name'); // Select specific fields
                 }
             ])->only([
-                        'id',
-                        'first_name',
-                        'last_name',
-                        'email',
-                        'mobile_no',
-                        'address',
-                        'pin_code',
-                        'timezone',
-                        'avatar_image'
-                    ]) : null;
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'mobile_no',
+                'address',
+                'pin_code',
+                'timezone',
+                'avatar_image'
+            ]) : null;
 
             // Add language details if available
             if ($selectedUser && $user->language) {
@@ -60,8 +60,6 @@ class SettingMobileAPIController extends Controller
                 'user_info' => $userInfo,
 
             ];
-
-
         } else {
 
             $data = [
@@ -69,11 +67,9 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated',
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
 
     public function account_data_edit(Request $request)
@@ -90,6 +86,7 @@ class SettingMobileAPIController extends Controller
             $userInfo = UserInfo::where('user_id', $userId)->first();
 
             try {
+
                 $request->validate([
                     'first_name' => 'required|alpha|max:100', // Max length of 100 characters
                     'last_name' => 'required|alpha|max:100', // Max length of 100 characters
@@ -119,8 +116,6 @@ class SettingMobileAPIController extends Controller
             }
 
 
-
-
             $user->update([
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
@@ -143,7 +138,6 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 200,
                 'message' => 'Data saved successfully',
             ];
-
         } else {
 
             $data = [
@@ -151,11 +145,9 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated',
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
 
     public function setting_change_password(Request $request)
@@ -183,7 +175,6 @@ class SettingMobileAPIController extends Controller
                         'same:password',            // Must match password
                     ],
                 ]);
-
             } catch (ValidationException $e) {
                 return response()->json([
                     'status' => 'failure',
@@ -233,9 +224,6 @@ class SettingMobileAPIController extends Controller
             $userId = $user->id;
 
             $userInfo = UserInfo::where('user_id', $userId)->first();
-
-
-
         } else {
 
             $data = [
@@ -243,11 +231,9 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated'
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
 
     public function setting_carrier_data()
@@ -277,8 +263,6 @@ class SettingMobileAPIController extends Controller
                 'user' => $selectedUser,
                 'user_info' => $userInfo,
             ];
-
-
         } else {
 
             $data = [
@@ -286,11 +270,9 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated'
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
 
     public function setting_carrier_update(Request $request)
@@ -322,8 +304,6 @@ class SettingMobileAPIController extends Controller
                     ],
                     'pincode' => 'required|numeric|digits_between:4,10', // Pincode length between 4 and 10 digits
                 ]);
-
-
             } catch (ValidationException $e) {
 
                 return response()->json([
@@ -332,7 +312,6 @@ class SettingMobileAPIController extends Controller
                     'message' => 'Validation failed',
                     'errors' => $e->errors(), // Include validation error messages
                 ], 422);
-
             }
 
             $userInfo = UserInfo::where('user_id', $userId)->first();
@@ -353,7 +332,6 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 200,
                 'message' => 'Data updated successfully',
             ];
-
         } else {
 
             $data = [
@@ -361,11 +339,9 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated'
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
 
     public function setting_cycle_rule_data()
@@ -423,7 +399,6 @@ class SettingMobileAPIController extends Controller
                 'selected_cargo_type_id' => $cargo_type_id,
                 'selected_rule_assign' => $rule_assign,
             ];
-
         } else {
 
             $data = [
@@ -431,11 +406,9 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated'
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
 
     public function setting_cycle_rule_update(Request $request)
@@ -462,8 +435,6 @@ class SettingMobileAPIController extends Controller
                     'adverse_driving_rule_id' => 'required',
                     'cargo_type_id' => 'required',
                 ]);
-
-
             } catch (ValidationException $e) {
 
                 return response()->json([
@@ -472,7 +443,6 @@ class SettingMobileAPIController extends Controller
                     'message' => 'Validation failed',
                     'errors' => $e->errors(), // Include validation error messages
                 ], 422);
-
             }
 
             RuleAssign::where('user_id', $userId)->delete();
@@ -508,7 +478,6 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 200,
                 'message' => 'Data updated successfully',
             ];
-
         } else {
 
             $data = [
@@ -516,11 +485,8 @@ class SettingMobileAPIController extends Controller
                 'statusCode' => 401,
                 'message' => 'Not authenticated'
             ];
-
         }
 
         return response()->json($data, $data['statusCode']);
-
     }
-
 }

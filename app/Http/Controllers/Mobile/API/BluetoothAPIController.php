@@ -51,6 +51,13 @@ class BluetoothAPIController extends Controller
                 ], 404);
             }
 
+            $parent = $driver->parent;
+
+            $timezone = $parent->timezone;
+
+            $currenTime = Carbon::parse()->setTimeFrom($timezone)->toDateTimeLocalString();
+            $currenTime = Carbon::parse($currenTime);
+
             $driverId = $driver->id;
             $vehicleId = $vehicle->id;
 
@@ -117,6 +124,7 @@ class BluetoothAPIController extends Controller
                 "log_data" => json_encode($request->all()),
                 "request_json" => json_encode($request->request_json),
                 "ip" => $request->ip(),
+                "created_at" => $currentTime,
                 "created_by" => $driverId,
             ]);
 
