@@ -19,6 +19,7 @@ class BluetoothLogData extends Model
         "request_json",
         "ip",
         "created_at",
+        'updated_at',
         "created_by",
         "updated_by"
     ];

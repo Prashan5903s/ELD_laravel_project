@@ -9,10 +9,11 @@ use Illuminate\Http\Request;
 use App\Models\DriverShiftLog;
 use App\Models\UserInfo;
 use App\Models\RuleAssign;
-use Illuminate\Support\Facades\DB;
 use App\Models\BluetoothLogData;
+use App\Models\RequestResponseLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class BluetoothAPIController extends Controller
@@ -21,6 +22,15 @@ class BluetoothAPIController extends Controller
     public function create(Request $request)
     {
         $driver = Auth::user();
+
+        $requestLog = [
+            'request_url'     => $request->fullUrl(),
+            'request_method'  => $request->method(),
+            'request_headers' => json_encode($request->headers->all()),
+            'request_data'    => json_encode($request->all()),
+            'ip_address'      => $request->ip(),
+            'created_by'      => $driver?->id,
+        ];
 
         try {
 
@@ -33,7 +43,7 @@ class BluetoothAPIController extends Controller
                 'latitude' => 'required',
                 'longitude' => 'required',
                 'engineHours' => 'required',
-                "request_json" => "required",
+                'request_json' => 'required',
             ]);
 
             DB::beginTransaction();
@@ -42,21 +52,32 @@ class BluetoothAPIController extends Controller
                 ->select('id', 'name')
                 ->first();
 
-            if (!$vehicle) {
-
-                return response()->json([
-                    "status" => "failure",
-                    "statusCode" => 404,
-                    "message" => "Vin does not exist"
-                ], 404);
-            }
-
             $parent = $driver->parent;
 
             $timezone = $parent->timezone;
 
-            $currenTime = Carbon::parse()->setTimeFrom($timezone)->toDateTimeLocalString();
-            $currenTime = Carbon::parse($currenTime);
+            $currentTime = Carbon::now()->setTimezone($timezone)->toDateTimeLocalString();
+
+            $currentTime = Carbon::parse($currentTime);
+
+            if (!$vehicle) {
+
+                DB::rollBack();
+
+                $responseData = [
+                    'status' => 'failure',
+                    'statusCode' => 404,
+                    'message' => 'Vin does not exist',
+                ];
+
+                RequestResponseLog::create(array_merge($requestLog, [
+                    'response_status' => 404,
+                    'response_data' => json_encode($responseData),
+                    'created_at' => $currentTime,
+                ]));
+
+                return response()->json($responseData, 404);
+            }
 
             $driverId = $driver->id;
             $vehicleId = $vehicle->id;
@@ -67,71 +88,80 @@ class BluetoothAPIController extends Controller
             $startLogTimeUnix = $startLogTime->timestamp;
             $endLogTimeUnix = $endLogTime->timestamp;
 
-            $userInfo = UserInfo::where("user_id", $driverId)->first();
-            $driverTimeZone = $userInfo->home_terminal_timezone;
+            $rule_ids = RuleAssign::where('user_id', $driverId)
+                ->pluck('rule_id');
 
-            $currentTime = Carbon::parse()->setTimezone($driverTimeZone)->toDateTimeLocalString();
-            $currentTime = Carbon::parse($currentTime);
+            bluetooth_log_add(
+                $driverId,
+                $startLogTime,
+                $endLogTime,
+                $currentTime
+            );
 
-            $rule_ids = RuleAssign::where('user_id', $driverId)->pluck('rule_id');
+            $locationName = fetchFullAddressName(
+                $request->latitude,
+                $request->longitude
+            );
 
-            bluetooth_log_add($driverId, $startLogTime, $endLogTime, $currentTime);
 
-            $locationName = fetchFullAddressName($request->latitude, $request->longitude);
+
             $currentShift = $request->speed >= 5 ? 3 : 1;
 
-            $latestDriving = DriverShiftLog::where("driver_id", $driverId)
+
+
+            $latestDriving = DriverShiftLog::where('driver_id', $driverId)
                 ->where('system_entry', 1)
-                ->latest("start_log_time")
+                ->latest('start_log_time')
                 ->first();
 
             $logCreate = DriverShiftLog::create([
-                "driver_id" => $driverId,
-                "vehicle_id" => $vehicleId,
-                "shift_changed_time" => $currentTime,
-                "start_log_time" => $startLogTime,
-                "end_log_time" => $endLogTime,
-                "start_log_time_unix" => $startLogTimeUnix,
-                "end_log_time_unix" => $endLogTimeUnix,
-                "current_shift_status" => $currentShift,
-                "location_name" => $locationName,
-                "location_end" => $locationName,
-                "engineHour" => $request->engineHours,
-                "odometer" => $request->odometer,
-                "odometer_end" => $request->odometer,
-                "system_entry" => 1,
-                "log_type" => 1,
-                "is_active" => 1,
-                "is_edit" => 1,
-                "accepted" => 1,
+                'driver_id' => $driverId,
+                'vehicle_id' => $vehicleId,
+                'shift_changed_time' => $currentTime,
+                'start_log_time' => $startLogTime,
+                'end_log_time' => $endLogTime,
+                'start_log_time_unix' => $startLogTimeUnix,
+                'end_log_time_unix' => $endLogTimeUnix,
+                'current_shift_status' => $currentShift,
+                'location_name' => $locationName,
+                'location_end' => $locationName,
+                'engineHour' => $request->engineHours,
+                'odometer' => $request->odometer,
+                'odometer_end' => $request->odometer,
+                'system_entry' => 1,
+                'log_type' => 1,
+                'is_active' => 1,
+                'is_edit' => 1,
+                'accepted' => 1,
             ]);
 
-            $shiftData = shift_cycle_start_check($logCreate, $currentTime, $locationName, $rule_ids, 0);
+            $shiftData = shift_cycle_start_check(
+                $logCreate,
+                $currentTime,
+                $locationName,
+                $rule_ids,
+                0
+            );
 
             $shiftStart = $shiftData[0];
             $cycleStart = $shiftData[1];
 
             $logCreate->update([
-                "shift_start" => $shiftStart,
-                "cycle_start" => $cycleStart,
+                'shift_start' => $shiftStart,
+                'cycle_start' => $cycleStart,
             ]);
 
-            //websocket change duty status
-
-            BluetoothLogData::create([
-                "driver_id" => $driverId,
-                "vehicle_id" => $vehicleId,
-                "log_data" => json_encode($request->all()),
-                "request_json" => json_encode($request->request_json),
-                "ip" => $request->ip(),
-                "created_at" => $currentTime,
-                "created_by" => $driverId,
+            $bluetoothLogData = BluetoothLogData::create([
+                'driver_id' => $driverId,
+                'vehicle_id' => $vehicleId,
+                'log_data' => json_encode($request->all()),
+                'request_json' => json_encode($request->request_json),
+                'ip' => $request->ip(),
+                'created_at' => $currentTime,
+                'created_by' => $driverId,
             ]);
 
             DB::commit();
-
-            $startLogTime = Carbon::parse($startLogTime);
-            $endLogTime = Carbon::parse($endLogTime);
 
             $durationInSeconds = $endLogTime->diffInSeconds($startLogTime);
 
@@ -139,53 +169,98 @@ class BluetoothAPIController extends Controller
             $minutes = floor(($durationInSeconds % 3600) / 60);
             $seconds = $durationInSeconds % 60;
 
-            $duration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+            $duration = sprintf(
+                '%02d:%02d:%02d',
+                $hours,
+                $minutes,
+                $seconds
+            );
 
-            //This is the API for the change duty status
+            $timeData = driver_log_time(
+                $driverId,
+                $currentTime
+            );
 
-            $timeData = driver_log_time($driverId, $currentTime);
-
-            //This is the api hit of socket
-
-            if (!$latestDriving || ($latestDriving && $latestDriving->current_shift_status != $currentShift)) {
-
-                Http::post('https://lms.learningink.com/socket/broadcast-duty-status', [
-                    'sendType' => 'change-duty-status',
-                    'driverId' => $driverId,
-                    'vehicle' => $vehicle,
-                    'duration' => $duration,
-                    'shiftStatus' => $currentShift ?? 1,
-                    'startLogTime' => $startLogTime->toISOString(),
-                    'endLogTime' => $endLogTime->toISOString(),
-                    'locationName' => $locationName,
-                    'odometer' => $request->odometer,
-                    'shift_time' => $timeData[4] ?? '00:00:00',
-                    'cycle_time' => $timeData[6] ?? '00:00:00',
-                    'break_time' => $timeData[8] ?? '00:00:00',
-                    'drive_time' => $timeData[7] ?? '00:00:00',
-                    'engineHours' => $request->engineHours,
-                ]);
+            if (
+                !$latestDriving ||
+                (
+                    $latestDriving &&
+                    $latestDriving->current_shift_status != $currentShift
+                )
+            ) {
+                Http::post(
+                    'https://lms.learningink.com/socket/broadcast-duty-status',
+                    [
+                        'sendType' => 'change-duty-status',
+                        'driverId' => $driverId,
+                        'vehicle' => $vehicle,
+                        'duration' => $duration,
+                        'shiftStatus' => $currentShift ?? 1,
+                        'startLogTime' => $startLogTime->toISOString(),
+                        'endLogTime' => $endLogTime->toISOString(),
+                        'locationName' => $locationName,
+                        'odometer' => $request->odometer,
+                        'shift_time' => $timeData[4] ?? '00:00:00',
+                        'cycle_time' => $timeData[6] ?? '00:00:00',
+                        'break_time' => $timeData[8] ?? '00:00:00',
+                        'drive_time' => $timeData[7] ?? '00:00:00',
+                        'engineHours' => $request->engineHours,
+                    ]
+                );
             }
 
-            return response()->json(
-                [
-                    "status" => "success",
-                    "statusCode" => 200,
-                    "message" => "Bluetooth log data inserted successfully",
-                    "data" => $logCreate,
-                ],
-                200
-            );
+            $responseData = [
+                'status' => 'success',
+                'statusCode' => 200,
+                'message' => 'Bluetooth log data inserted successfully',
+                'data' => $bluetoothLogData,
+            ];
+
+            // Save request + response log
+            RequestResponseLog::create(array_merge($requestLog, [
+                'response_status' => 200,
+                'response_data' => json_encode($responseData),
+                'created_at' => $currentTime,
+            ]));
+
+            return response()->json($responseData, 200);
         } catch (ValidationException $th) {
 
             DB::rollBack();
 
-            return response()->json([
+            $responseData = [
                 'status' => 'failure',
                 'statusCode' => 422,
                 'message' => 'Validation failed',
                 'errors' => $th->errors(),
-            ], 422);
+            ];
+
+            RequestResponseLog::create(array_merge($requestLog, [
+                'response_status' => 422,
+                'response_data' => json_encode($responseData),
+                'created_at' => $currentTime,
+            ]));
+
+            return response()->json($responseData, 422);
+        } catch (\Throwable $th) {
+
+            DB::rollBack();
+
+            $responseData = [
+                'status' => 'failure',
+                'statusCode' => 500,
+                'message' => 'Something went wrong',
+                'error' => $th->getMessage(),
+            ];
+
+            RequestResponseLog::create(array_merge($requestLog, [
+                'response_status' => 500,
+                'response_data' => json_encode($responseData),
+                'created_at' => $currentTime,
+
+            ]));
+
+            return response()->json($responseData, 500);
         }
     }
 }
