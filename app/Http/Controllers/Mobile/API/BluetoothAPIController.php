@@ -91,6 +91,9 @@ class BluetoothAPIController extends Controller
             $rule_ids = RuleAssign::where('user_id', $driverId)
                 ->pluck('rule_id');
 
+
+            //This is bluetooth function
+
             bluetooth_log_add(
                 $driverId,
                 $startLogTime,
